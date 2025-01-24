@@ -8,5 +8,5 @@ Instalar poetry en windows
 py -m pip install pipx
 pipx install poetry==1.8.4
 
-# Ejecutar poetry
-poetry shell
+# Ejecutar proyecto
+uvicorn main:app --reload
