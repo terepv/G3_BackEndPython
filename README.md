@@ -25,6 +25,13 @@ poetry install
 # Ejecutar poetry
 poetry install
 
+# Volver a guardar librerias
+Si alguien hace un push y no tiene las nuevas librerias puede ejecutar estos comandos
+``sh
+poetry lock
+poetry install
+```
+
 # Ejecutar proyecto
 Si la versión de Poetry instalada tiene el comando shell se deberá ejecutar para activar el ambiente virtual de python y poder acceder a los paquetes instalados como uvicorn
 ```sh
