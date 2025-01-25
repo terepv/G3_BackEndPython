@@ -6,5 +6,5 @@ app = FastAPI()
 
 @app.get("/")
 def get_all_comunas():
-    res = comuna_service.get_all_comuna
+    res = comuna_service.get_all_comuna()
     return res
