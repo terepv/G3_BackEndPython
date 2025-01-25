@@ -1,5 +1,6 @@
 # PPDA models
-from pydantic import BaseModel, List
+from pydantic import BaseModel
+from typing import List
 
 class ComunaModel(BaseModel):
     id_comuna: int
