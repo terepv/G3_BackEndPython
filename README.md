@@ -9,4 +9,4 @@ py -m pip install pipx
 pipx install poetry==1.8.4
 
 # Ejecutar proyecto
-uvicorn main:app --reload
+poetry run uvicorn main:app --reload
