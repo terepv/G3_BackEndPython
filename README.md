@@ -22,6 +22,9 @@ poetry install
 > En caso de presentar algun conflicto con la version de python que detecta poetry se deberá ejecutar el comando `poetry env use path/to/python.exe` la version de python requerida se puede ver en el archivo `pyproject.toml`
 > Una vez solucionada la versión de python, volver a ejecutar la instalación de dependencias.
 
+# Ejecutar poetry
+poetry install
+
 # Ejecutar proyecto
 Si la versión de Poetry instalada tiene el comando shell se deberá ejecutar para activar el ambiente virtual de python y poder acceder a los paquetes instalados como uvicorn
 ```sh

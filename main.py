@@ -8,7 +8,6 @@ app = FastAPI(
     description=f"Last deployment: {get_local_now_datetime()}",
 )
 
-
 @app.get("/")
 def read_root():
     return {"Hello": "World Ivan"}
