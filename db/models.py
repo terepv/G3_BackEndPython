@@ -1,0 +1,70 @@
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    mapped_column,
+    relationship,
+)
+from sqlalchemy import (
+    DateTime,
+    Integer,
+    String,
+    ForeignKey,
+)
+
+class Base(DeclarativeBase, MappedAsDataclass):
+    pass
+
+class Region(Base):
+    __tablename__ = "region"
+    id_region: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    region: Mapped[str] = mapped_column(String(100), nullable=False)
+
+
+class Comuna(Base):
+    __tablename__ = "comuna"
+    id_comuna: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    comuna: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_region: Mapped[int] = mapped_column(Integer, ForeignKey("region.id_region"), nullable=False)
+    region: Mapped[Region] = relationship(Region)
+
+class ComunaOut(BaseModel):
+    id_comuna: int
+    comuna: str
+    region: Region
+    class Config:
+        from_attributes = True
+
+class Plan(Base):
+    __tablename__ = "plan"
+    id_plan: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
+    descripcion: Mapped[str] = mapped_column(String(100), nullable=False)
+    fecha_publicacion: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+class PlanComuna(Base):
+    __tablename__ = "plan_comuna"
+    id_plan_comuna: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_plan: Mapped[int] = mapped_column(Integer, ForeignKey("plan.id_plan"), nullable=False)
+    id_comuna: Mapped[int] = mapped_column(Integer, ForeignKey("comuna.id_comuna"), nullable=False)
+    plan: Mapped[Plan] = relationship(Plan)
+    comuna: Mapped[Comuna] = relationship(Comuna)
+    
+    def __init__(self, id_plan: int, id_comuna: int):
+        self.id_plan = id_plan
+        self.id_comuna = id_comuna
+
+class PlanComunaIn(BaseModel):
+    id_plan_comuna: int
+    id_plan: int
+    id_comuna: int
+    
+class PlanComunaOut(BaseModel):
+    id_plan_comuna: int
+    plan: Plan
+    comuna: Comuna
+    class Config:
+        from_attributes = True
