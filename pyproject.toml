@@ -12,6 +12,7 @@ pydantic = "^2.10.6"
 psycopg2 = "^2.9.10"
 python-dotenv = "^1.0.1"
 pandas = "^2.2.3"
+psycopg2-binary = "^2.9.10"
 
 
 [build-system]
