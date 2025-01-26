@@ -9,6 +9,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Integer,
     String,
@@ -104,3 +105,55 @@ class TipoDato(Base):
     def __init__(self, tipo_dato: str):
         self.tipo_dato = tipo_dato
 
+class Opcion(Base):
+    __tablename__ = "opcion"
+    id_opcion: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    opcion: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    def __init__(self, opcion: str):
+        self.opcion = opcion
+
+class Medida(Base):
+    __tablename__ = "medida"
+    id_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nombre_corto: Mapped[str] = mapped_column(String(100), nullable=False)
+    indicador: Mapped[str] = mapped_column(String(100), nullable=False)
+    formula_calculo: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_frecuencia: Mapped[int] = mapped_column(Integer, ForeignKey("frecuencia.id_frecuencia"), nullable=False)
+    frecuencia: Mapped[Frecuencia] = relationship(Frecuencia)
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=False)
+    organismo_sectorial: Mapped[OrganismoSectorial] = relationship(OrganismoSectorial)
+    id_tipo_medida: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_medida.id_tipo_medida"), nullable=False)
+    tipo_medida: Mapped[TipoMedida] = relationship(TipoMedida)
+    id_plan: Mapped[int] = mapped_column(Integer, ForeignKey("plan.id_plan"), nullable=False)
+    plan: Mapped[Plan] = relationship(Plan)
+    desc_medio_de_verificacion: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_tipo_dato: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_dato.id_tipo_dato"), nullable=False)
+    tipo_dato: Mapped[TipoDato] = relationship(TipoDato)
+    cron: Mapped[str] = mapped_column(String(100), nullable=False)
+    reporte_unico: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, cron: str, reporte_unico: bool):
+        self.nombre_corto = nombre_corto
+        self.indicador = indicador
+        self.formula_calculo = formula_calculo
+        self.id_frecuencia = id_frecuencia
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.id_tipo_medida = id_tipo_medida
+        self.id_plan = id_plan
+        self.desc_medio_de_verificacion = desc_medio_de_verificacion
+        self.id_tipo_dato = id_tipo_dato
+        self.cron = cron
+        self.reporte_unico = reporte_unico
+
+class Opcion_Medida(Base):
+    __tablename__ = "opcion_medida"
+    id_opcion_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_opcion: Mapped[int] = mapped_column(Integer, ForeignKey("opcion.id_opcion"), nullable=False)
+    id_medida: Mapped[int] = mapped_column(Integer, ForeignKey("medida.id_medida"), nullable=False)
+    opcion: Mapped[Opcion] = relationship(Opcion)
+    medida: Mapped[Medida] = relationship(Medida)
+
+    def __init__(self, id_opcion: int, id_medida: int):
+        self.id_opcion = id_opcion
+        self.id_medida = id_medida

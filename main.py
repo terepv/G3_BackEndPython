@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Frecuencia, Plan, Region, Comuna, ComunaOut, PlanComuna, TipoDato, TipoMedida, Usuario, TipoUsuario, OrganismoSectorial
+from db.models import Frecuencia, Medida, Opcion, Opcion_Medida, Plan, Region, Comuna, ComunaOut, PlanComuna, TipoDato, TipoMedida, Usuario, TipoUsuario, OrganismoSectorial
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -249,11 +249,71 @@ def delete_tipo_medida(
     db.commit()
     return {"message": "Se eliminó tipo de medida", "tipo de medida": tipo_medida}
 
-@app.get("/tipo_datos", response_model=list[TipoDato], tags=["tipo datos"], summary="Obtener todos los tipos de datos")
+@app.get("/tipos_datos", response_model=list[TipoDato], tags=["tipo datos"], summary="Obtener todos los tipos de datos")
 def read_tipo_datos(
     db: SyncDbSessionDep,
 ):
     tipo_datos = db.query(TipoDato).all()
     return tipo_datos
 
-# TODO: Agregar HTTPException a cada get ("No existe")
+@app.get("/opciones_medidas", response_model=list[Opcion_Medida], tags=["opciones medidas"], summary="Obtener todas las opciones de medidas")
+def read_opciones_medidas(
+    db: SyncDbSessionDep,
+):
+    opciones_medidas = db.query(Opcion_Medida).all()
+    return opciones_medidas
+
+@app.post("/opcion_medida", tags=["opciones medidas"], summary="Añade una opcion de medida")
+def add_opcion_medida(
+    id_opcion: int,
+    id_medida: int,
+    db: SyncDbSessionDep,
+):
+    if not db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first():
+        raise HTTPException(status_code=404, detail="Opcion no existe")
+    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
+        raise HTTPException(status_code=404, detail="Medida no existe")
+    
+    opcion_medida = Opcion_Medida(id_opcion=id_opcion, id_medida=id_medida)
+    db.add(opcion_medida)
+    db.commit()
+    db.refresh(opcion_medida)
+    return {"message": "Se creó opcion de medida", "opcion de medida": opcion_medida}
+
+@app.delete("/opcion_medida/{id_opcion_medida}", tags=["opciones medidas"], summary="Elimina una opcion de medida")
+def delete_opcion_medida(
+    id_opcion_medida: int,
+    db: SyncDbSessionDep,
+): 
+    opcion_medida = db.query(Opcion_Medida).filter(Opcion_Medida.id_opcion_medida==id_opcion_medida).first()
+    db.delete(opcion_medida)
+    db.commit()
+    return {"message": "Se eliminó opcion de medida", "opcion de medida": opcion_medida}
+
+@app.get("/opciones", response_model=list[Opcion], tags=["opciones"], summary="Obtener todas las opciones")
+def read_opciones(
+    db: SyncDbSessionDep,
+):
+    opciones = db.query(Opcion).all()
+    return opciones
+
+@app.post("/opcion", tags=["opciones"], summary="Añade una opcion")
+def add_opcion(
+    opcion: str,
+    db: SyncDbSessionDep,
+):
+    opcion = Opcion(opcion=opcion)
+    db.add(opcion)
+    db.commit()
+    db.refresh(opcion)
+    return {"message": "Se creó opcion", "opcion": opcion}
+
+@app.delete("/opcion/{id_opcion}", tags=["opciones"], summary="Elimina una opcion")
+def delete_opcion(
+    id_opcion: int,
+    db: SyncDbSessionDep,
+):
+    opcion = db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first()
+    db.delete(opcion)
+    db.commit()
+    return {"message": "Se eliminó opcion", "opcion": opcion}
