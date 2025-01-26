@@ -25,6 +25,8 @@ def read_region(
     db: SyncDbSessionDep,
 ):
     region = db.query(Region).filter(Region.id_region == id_region).first()
+    if not region:
+        raise HTTPException(status_code=404, detail="No existe región con ese id")
     return region
 
 @app.get("/comunas", response_model=list[ComunaOut], tags=["comunas"], summary="Obtener todas las comunas")
@@ -40,6 +42,8 @@ def read_comuna(
     db: SyncDbSessionDep,
 ):
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
+    if not comuna:
+        raise HTTPException(status_code=404, detail="No existe comuna con ese id")
     return comuna
 
 # Ejercicio planteado: endpoint para añadir comuna con sqlalchemy
@@ -57,6 +61,8 @@ def read_plan(
     db: SyncDbSessionDep,
 ):
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No existe plan con ese id")
     return plan
 
 @app.get("/plan/{id_plan}/comunas", response_model=list[ComunaOut], tags=["planes"], summary="Obtener todas las comunas de un plan")
@@ -119,15 +125,16 @@ def read_user(
     db: SyncDbSessionDep,
 ):
     usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="No existe usuario con ese id")
     return usuario
 
-@app.get("/organismos_sectoriales/", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
+@app.get("/organismos_sectoriales", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
 def read_organismos(
     db: SyncDbSessionDep,
 ):
     organismos = db.query(OrganismoSectorial).all()
     return organismos
-
 
 @app.get("/organismo_sectorial/{id_organismo_sectorial}", response_model=OrganismoSectorial, tags=["organismos sectoriales"], summary="Obtener un organismo sectorial por su id")
 def read_organismo(
@@ -136,7 +143,7 @@ def read_organismo(
 ):
     organismo = db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first()
     if not organismo:
-        raise HTTPException(status_code=404, detail="No existe organismo con ese id")
+        raise HTTPException(status_code=404, detail="No existe organismo sectorial con ese id")
     return organismo
 
 @app.post("/organismo_sectorial/", tags=["organismos sectoriales"], summary="Añade un organismo sectorial")
@@ -179,6 +186,8 @@ def read_frecuencia(
     db: SyncDbSessionDep,
 ):
     frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
+    if not frecuencia:
+        raise HTTPException(status_code=404, detail="No existe frecuencia con ese id")
     return frecuencia
 
 @app.post("/frecuencia/", tags=["frecuencias"], summary="Añade una frecuencia")
@@ -215,6 +224,8 @@ def read_tipo_medida(
     db: SyncDbSessionDep,
 ):
     tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
+    if not tipo_medida:
+        raise HTTPException(status_code=404, detail="No existe tipo de medida con ese id")
     return tipo_medida
 
 @app.post("/tipo_medida/", tags=["tipo medidas"], summary="Añade un tipo de medida")
