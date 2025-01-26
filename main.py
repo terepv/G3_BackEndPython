@@ -121,7 +121,7 @@ def read_user(
     usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
     return usuario
 
-@app.get("/organismo_sectorial/", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
+@app.get("/organismos_sectoriales/", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
 def read_organismos(
     db: SyncDbSessionDep,
 ):
@@ -139,7 +139,7 @@ def read_organismo(
         raise HTTPException(status_code=404, detail="No existe organismo con ese id")
     return organismo
 
-@app.post("/organismo_sectorial/", tags=["organismo sectorial"], summary="Añade un organismo sectorial")
+@app.post("/organismo_sectorial/", tags=["organismos sectoriales"], summary="Añade un organismo sectorial")
 def add_organismo(
     organismo_sectorial: str,
     db: SyncDbSessionDep
@@ -152,5 +152,18 @@ def add_organismo(
         return {"message": "Se creó organismo sectorial", "organismo sectorial": organismo}
     
     return HTTPException(status_code=409, detail="Organismo Sectorial ya existe")
+
+@app.delete("/organismo_sectorial/{id_organismo_sectorial}", tags=["organismos sectoriales"], summary="Elimina un organismo sectorial")
+def delete_organismo(
+    id_organismo_sectorial: int,
+    db: SyncDbSessionDep,
+):
+    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first():
+        return HTTPException(status_code=404, detail="Organismo Sectorial no existe")
+    
+    organismo = db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first()
+    db.delete(organismo)
+    db.commit()
+    return {"message": "Se eliminó organismo sectorial", "organismo sectorial": organismo}
 
 # TODO: Agregar HTTPException a cada get ("No existe")
