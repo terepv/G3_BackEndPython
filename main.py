@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Plan, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario
+from db.models import Plan, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario, OrganismoSectorial
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -120,3 +120,23 @@ def read_user(
 ):
     usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
     return usuario
+
+@app.get("/organismo_sectorial/", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
+def read_organismos(
+    db: SyncDbSessionDep,
+):
+    organismos = db.query(OrganismoSectorial).all()
+    return organismos
+
+
+@app.get("/organismo_sectorial/{id_organismo_sectorial}", response_model=OrganismoSectorial, tags=["organismos sectoriales"], summary="Obtener un organismo sectorial por su id")
+def read_organismo(
+    id_organismo_sectorial: int,
+    db: SyncDbSessionDep,
+):
+    organismo = db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first()
+    if not organismo:
+        raise HTTPException(status_code=404, detail="No existe organismo con ese id")
+    return organismo
+
+# TODO: Agregar HTTPException a cada get

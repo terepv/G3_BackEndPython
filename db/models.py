@@ -65,9 +65,14 @@ class TipoUsuario(Base):
 
 class Usuario(Base):
     __tablename__ = "usuario"
-    id_usuario: Mapped[int] = mapped_column(String, primary_key=True, autoincrement=True)
+    id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     apellido: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
     tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
+
+class OrganismoSectorial(Base):
+    __tablename__ = "organismo_sectorial"
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False)
