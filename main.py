@@ -317,3 +317,22 @@ def delete_opcion(
     db.delete(opcion)
     db.commit()
     return {"message": "Se eliminó opcion", "opcion": opcion}
+
+@app.get("/medidas", response_model=list[Medida], tags=["medidas"], summary="Obtener todas las medidas")
+def read_medidas(
+    db:SyncDbSessionDep,
+):
+    medidas = db.query(Medida).all()
+    return medidas
+
+@app.get("/medida/{id_medida}", response_model=Medida, tags=["medidas"], summary="Obtener una medida por su id")
+def read_medida(
+    id_medida: int,
+    db: SyncDbSessionDep,
+):
+    medida = db.query(Medida).filter(Medida.id_medida == id_medida).first()
+    if not medida:
+        raise HTTPException(status_code=404, detail="No existe medida con ese id")
+    return medida
+
+# TODO Falta implementar endpoints de medida (POST, DELETE)
