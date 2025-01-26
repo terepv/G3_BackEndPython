@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Plan, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario, OrganismoSectorial
+from db.models import Frecuencia, Plan, Region, Comuna, ComunaOut, PlanComuna, TipoMedida, Usuario, TipoUsuario, OrganismoSectorial
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -165,5 +165,77 @@ def delete_organismo(
     db.delete(organismo)
     db.commit()
     return {"message": "Se eliminó organismo sectorial", "organismo sectorial": organismo}
+
+@app.get("/frecuencias", response_model=list[Frecuencia], tags=["frecuencias"], summary="Obtener todas las frecuencias")
+def read_frecuencias(
+    db: SyncDbSessionDep,
+):
+    frecuencias = db.query(Frecuencia).all()
+    return frecuencias
+
+@app.get("/frecuencia/{id_frecuencia}", response_model=Frecuencia, tags=["frecuencias"], summary="Obtener una frecuencia por su id")
+def read_frecuencia(
+    id_frecuencia: int,
+    db: SyncDbSessionDep,
+):
+    frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
+    return frecuencia
+
+@app.post("/frecuencia/", tags=["frecuencias"], summary="Añade una frecuencia")
+def add_frecuencia(
+    frecuencia: str,
+    db: SyncDbSessionDep,
+):
+    frecuencia = Frecuencia(frecuencia=frecuencia)
+    db.add(frecuencia)
+    db.commit()
+    db.refresh(frecuencia)
+    return {"message": "Se creó frecuencia", "frecuencia": frecuencia}
+
+@app.delete("/frecuencia/{id_frecuencia}", tags=["frecuencias"], summary="Elimina una frecuencia")
+def delete_frecuencia(
+    id_frecuencia: int,
+    db: SyncDbSessionDep,
+):
+    frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
+    db.delete(frecuencia)
+    db.commit()
+    return {"message": "Se eliminó frecuencia", "frecuencia": frecuencia}
+
+@app.get("/tipo_medidas", response_model=list[TipoMedida], tags=["tipo medidas"], summary="Obtener todos los tipos de medidas")
+def read_tipo_medidas(
+    db: SyncDbSessionDep,
+):
+    tipo_medidas = db.query(TipoMedida).all()
+    return tipo_medidas
+
+@app.get("/tipo_medida/{id_tipo_medida}", response_model=TipoMedida, tags=["tipo medidas"], summary="Obtener un tipo de medida por su id")
+def read_tipo_medida(
+    id_tipo_medida: int,
+    db: SyncDbSessionDep,
+):
+    tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
+    return tipo_medida
+
+@app.post("/tipo_medida/", tags=["tipo medidas"], summary="Añade un tipo de medida")
+def add_tipo_medida(
+    tipo_medida: str,
+    db: SyncDbSessionDep,
+):
+    tipo_medida = TipoMedida(tipo_medida=tipo_medida)
+    db.add(tipo_medida)
+    db.commit()
+    db.refresh(tipo_medida)
+    return {"message": "Se creó tipo de medida", "tipo de medida": tipo_medida}
+
+@app.delete("/tipo_medida/{id_tipo_medida}", tags=["tipo medidas"], summary="Elimina un tipo de medida")
+def delete_tipo_medida(
+    id_tipo_medida: int,
+    db: SyncDbSessionDep,
+):
+    tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
+    db.delete(tipo_medida)
+    db.commit()
+    return {"message": "Se eliminó tipo de medida", "tipo de medida": tipo_medida}
 
 # TODO: Agregar HTTPException a cada get ("No existe")

@@ -79,3 +79,20 @@ class OrganismoSectorial(Base):
 
     def __init__(self, organismo_sectorial: str):
         self.organismo_sectorial = organismo_sectorial
+
+class Frecuencia(Base):
+    __tablename__ = "frecuencia"
+    id_frecuencia: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    frecuencia: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    def __init__(self, frecuencia: str):
+        self.frecuencia = frecuencia
+
+class TipoMedida(Base):
+    __tablename__ = "tipo_medida"
+    id_tipo_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tipo_medida: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    def __init__(self, tipo_medida: str):
+        self.tipo_medida = tipo_medida
+
