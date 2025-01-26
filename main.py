@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Plan, PlanComunaIn, PlanComunaOut, Region, Comuna, ComunaOut, PlanComuna
+from db.models import Plan, PlanComunaIn, PlanComunaOut, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -103,3 +103,18 @@ def delete_comuna_from_plan(
     db.commit()
     
     return {"message": "Se eliminó la comuna del plan"}
+
+@app.get("/usuarios", response_model=list[Usuario], tags=["usuarios"], summary="Obtener todos los usuarios")
+def read_users(
+    db: SyncDbSessionDep,
+):
+    users = db.query(Usuario).all()
+    return users
+
+@app.get("/usuario/{id_usuario}", response_model=Usuario, tags=["usuarios"], summary="Obtener un usuario por su id")
+def read_user(
+    id_usuario: int,
+    db: SyncDbSessionDep,
+):
+    usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
+    return usuario

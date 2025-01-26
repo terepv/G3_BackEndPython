@@ -57,6 +57,22 @@ class PlanComuna(Base):
         self.id_plan = id_plan
         self.id_comuna = id_comuna
 
+class TipoUsuario(Base):
+    __tablename__ = "tipo_usuario"
+    id_tipo_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tipo_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
+
+
+class Usuario(Base):
+    __tablename__ = "usuario"
+    id_usuario: Mapped[int] = mapped_column(String, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
+    apellido: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
+    tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
+
+
 class PlanComunaIn(BaseModel):
     id_plan_comuna: int
     id_plan: int
