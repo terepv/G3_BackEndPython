@@ -27,7 +27,7 @@ poetry install
 
 # Volver a guardar librerias
 Si alguien hace un push y no tiene las nuevas librerias puede ejecutar estos comandos
-``sh
+```sh
 poetry lock
 poetry install
 ```
