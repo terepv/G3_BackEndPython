@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Frecuencia, Plan, Region, Comuna, ComunaOut, PlanComuna, TipoMedida, Usuario, TipoUsuario, OrganismoSectorial
+from db.models import Frecuencia, Plan, Region, Comuna, ComunaOut, PlanComuna, TipoDato, TipoMedida, Usuario, TipoUsuario, OrganismoSectorial
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -237,5 +237,12 @@ def delete_tipo_medida(
     db.delete(tipo_medida)
     db.commit()
     return {"message": "Se eliminó tipo de medida", "tipo de medida": tipo_medida}
+
+@app.get("/tipo_datos", response_model=list[TipoDato], tags=["tipo datos"], summary="Obtener todos los tipos de datos")
+def read_tipo_datos(
+    db: SyncDbSessionDep,
+):
+    tipo_datos = db.query(TipoDato).all()
+    return tipo_datos
 
 # TODO: Agregar HTTPException a cada get ("No existe")

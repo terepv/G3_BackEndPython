@@ -96,3 +96,11 @@ class TipoMedida(Base):
     def __init__(self, tipo_medida: str):
         self.tipo_medida = tipo_medida
 
+class TipoDato(Base):
+    __tablename__ = "tipo_dato"
+    id_tipo_dato: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tipo_dato: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    def __init__(self, tipo_dato: str):
+        self.tipo_dato = tipo_dato
+
