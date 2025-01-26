@@ -82,7 +82,7 @@ def add_comuna_to_plan(
         raise HTTPException(status_code=404, detail="La comuna no existe")
     
     if db.query(PlanComuna).filter(PlanComuna.id_plan == id_plan, PlanComuna.id_comuna == id_comuna).first():
-        raise HTTPException(status_code=400, detail="La comuna ya existe en el plan")
+        raise HTTPException(status_code=409, detail="La comuna ya existe en el plan")
     
     plan_comuna = PlanComuna(id_plan=id_plan, id_comuna=id_comuna)
     db.add(plan_comuna)
@@ -138,5 +138,22 @@ def read_organismo(
     if not organismo:
         raise HTTPException(status_code=404, detail="No existe organismo con ese id")
     return organismo
+
+@app.post("/organismo_sectorial", response_model=OrganismoSectorial, tags=["organismo sectorial"], summary="Añade un organismo sectorial")
+def add_organismo(
+    organismo_sectorial: str,
+    db: SyncDbSessionDep
+): 
+    query = db.query(OrganismoSectorial).filter(OrganismoSectorial.organismo_sectorial==organismo_sectorial)
+    print(query)
+    print("hola")
+    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.organismo_sectorial==organismo_sectorial).first():
+        organismo = OrganismoSectorial(organismo_sectorial=organismo_sectorial)
+        db.add(organismo)
+        db.commit()
+        db.refresh(organismo)
+        return {"message": "Se creó organismo sectorial", "organismo sectorial": {organismo}}
+    
+    # return HTTPException(status_code=409, detail="Organismo Sectorial ya existe")
 
 # TODO: Agregar HTTPException a cada get
