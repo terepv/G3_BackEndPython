@@ -77,3 +77,5 @@ class OrganismoSectorial(Base):
     id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False)
 
+    def __init__(self, organismo_sectorial: str):
+        self.organismo_sectorial = organismo_sectorial
