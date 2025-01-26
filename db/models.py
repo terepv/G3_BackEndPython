@@ -71,16 +71,3 @@ class Usuario(Base):
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
     tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
-
-
-class PlanComunaIn(BaseModel):
-    id_plan_comuna: int
-    id_plan: int
-    id_comuna: int
-    
-class PlanComunaOut(BaseModel):
-    id_plan_comuna: int
-    plan: Plan
-    comuna: Comuna
-    class Config:
-        from_attributes = True

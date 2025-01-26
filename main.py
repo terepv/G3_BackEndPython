@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from utils import get_local_now_datetime
-from db.models import Plan, PlanComunaIn, PlanComunaOut, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario
+from db.models import Plan, Region, Comuna, ComunaOut, PlanComuna, Usuario, TipoUsuario
 from shared.dependencies import SyncDbSessionDep
 
 app = FastAPI(
@@ -41,6 +41,8 @@ def read_comuna(
 ):
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     return comuna
+
+# Ejercicio planteado: endpoint para añadir comuna con sqlalchemy
 
 @app.get("/planes", response_model=list[Plan], tags=["planes"], summary="Obtener todos los planes")
 def read_planes(
