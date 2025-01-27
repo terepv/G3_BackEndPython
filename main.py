@@ -337,7 +337,7 @@ def read_medida(
 
 # TODO Falta implementar endpoints de medida (POST, DELETE)
 
-app.post("/medida", tags=["medida"], summary="Añade una medida")
+@app.post("/medida", tags=["medidas"], summary="Añade una medida")
 def add_medida(
     nombre_corto: str,
     indicador: str,
