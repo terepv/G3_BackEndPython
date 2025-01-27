@@ -338,8 +338,6 @@ def read_medida(
         raise HTTPException(status_code=404, detail="No existe medida con ese id")
     return medida
 
-# TODO Falta implementar endpoints de medida (POST, DELETE)
-
 @app.post("/medida", tags=["medidas"], summary="Añade una medida")
 def add_medida(
     nombre_corto: str,
@@ -355,9 +353,33 @@ def add_medida(
     reporte_unico: bool,
     db: SyncDbSessionDep,
 ):
-    medida = Medida(nombre_corto=nombre_corto, indicador=indicador, formula_calculo=formula_calculo, id_frecuencia=id_frecuencia, id_organismo_sectorial=id_organismo_sectorial, id_tipo_medida=id_tipo_medida, id_plan=id_plan, desc_medio_de_verificacion=desc_medio_de_verificacion, id_tipo_dato=id_tipo_dato, cron=cron, reporte_unico=reporte_unico)
+    medida = Medida(
+        nombre_corto=nombre_corto, 
+        indicador=indicador, 
+        formula_calculo=formula_calculo, 
+        id_frecuencia=id_frecuencia, 
+        id_organismo_sectorial=id_organismo_sectorial, 
+        id_tipo_medida=id_tipo_medida, 
+        id_plan=id_plan, 
+        desc_medio_de_verificacion=desc_medio_de_verificacion, 
+        id_tipo_dato=id_tipo_dato, cron=cron, 
+        reporte_unico=reporte_unico)
     db.add(medida)
     db.commit()
     db.refresh(medida)
     return {"message": "Se creó opcion de medida", "opcion de medida": medida}
+
+@app.delete("/medida/{id_medida}", tags=["medidas"], summary="Elimina una medida por su id")
+def delete_medida(
+    id_medida: int,
+    db: SyncDbSessionDep,
+):
+    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
+        return HTTPException(status_code=404, detail="No existe medida con ese id")
+
+    medida = db.query(Medida).filter(Medida.id_medida==id_medida).first()
+    db.delete(medida)
+    db.commit()
+    return {"message": "Se eliminó medida", "medida": medida}
+
 # TODO Falta implementar validadores para cada campo
