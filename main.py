@@ -336,3 +336,25 @@ def read_medida(
     return medida
 
 # TODO Falta implementar endpoints de medida (POST, DELETE)
+
+app.post("/medida", tags=["medida"], summary="Añade una medida")
+def add_medida(
+    nombre_corto: str,
+    indicador: str,
+    formula_calculo: str,
+    id_frecuencia: int,
+    id_organismo_sectorial: int,
+    id_tipo_medida: int,
+    id_plan: int,
+    desc_medio_de_verificacion: str,
+    id_tipo_dato: int,
+    cron: str,
+    reporte_unico: bool,
+    db: SyncDbSessionDep,
+):
+    medida = Medida(nombre_corto=nombre_corto, indicador=indicador, formula_calculo=formula_calculo, id_frecuencia=id_frecuencia, id_organismo_sectorial=id_organismo_sectorial, id_tipo_medida=id_tipo_medida, id_plan=id_plan, desc_medio_de_verificacion=desc_medio_de_verificacion, id_tipo_dato=id_tipo_dato, cron=cron, reporte_unico=reporte_unico)
+    db.add(medida)
+    db.commit()
+    db.refresh(medida)
+    return {"message": "Se creó opcion de medida", "opcion de medida": medida}
+# TODO Falta implementar validadores para cada campo
