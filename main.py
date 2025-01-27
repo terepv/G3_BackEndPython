@@ -314,6 +314,9 @@ def delete_opcion(
     db: SyncDbSessionDep,
 ):
     opcion = db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first()
+    if not opcion:
+        raise HTTPException(status_code=404, detail="No se pudo borrar la opcion")
+
     db.delete(opcion)
     db.commit()
     return {"message": "Se eliminó opcion", "opcion": opcion}
