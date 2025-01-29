@@ -1,0 +1,7 @@
+{
+    "nombre": "string",
+    "apellido": "string",
+    "email": "usuario@example.com",
+    "activo": true,
+    "id_tipo_usuario": 1
+}

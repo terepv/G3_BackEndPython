@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -18,6 +18,44 @@ from sqlalchemy import (
 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass
+
+class TipoUsuario(Base):
+    __tablename__ = "tipo_usuario"
+    id_tipo_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tipo_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
+
+class Usuario(Base):
+    __tablename__ = "usuario"
+    id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
+    apellido: Mapped[str] = mapped_column(String(100), nullable=False)
+    email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
+    tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    
+    def __init__(self, nombre: str, apellido: str, email: str, id_tipo_usuario: int, activo: bool = True):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.email = email
+        self.id_tipo_usuario = id_tipo_usuario
+        self.activo = activo
+
+class UsuarioCreate(BaseModel):
+    nombre: str
+    apellido: str
+    email: str
+    activo: bool | None = True
+    id_tipo_usuario: int
+
+class UsuarioOut(BaseModel):
+    id_usuario: int
+    nombre: str
+    apellido: str
+    email: str
+    tipo_usuario: TipoUsuario
+    class Config:
+        from_attributes = True
 
 class Region(Base):
     __tablename__ = "region"
@@ -44,7 +82,20 @@ class Plan(Base):
     id_plan: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[str] = mapped_column(String(100), nullable=False)
-    fecha_publicacion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
+    id_usuario_creacion: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    usuario_creacion: Mapped[Usuario] = relationship(Usuario)
+    fecha_publicacion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now())
+
+    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None, id_usuario_creacion: int = None):
+        self.nombre = nombre
+        self.descripcion = descripcion
+        self.fecha_publicacion = fecha_publicacion or datetime.now()
+        self.id_usuario_creacion = id_usuario_creacion or 1
+
+class PlanCreate(BaseModel):
+    nombre: str = Field(..., min_length=3, max_length=100)
+    descripcion: str = Field(..., min_length=3, max_length=100)
+    fecha_publicacion: datetime
 
 class PlanComuna(Base):
     __tablename__ = "plan_comuna"
@@ -58,30 +109,6 @@ class PlanComuna(Base):
         self.id_plan = id_plan
         self.id_comuna = id_comuna
 
-class TipoUsuario(Base):
-    __tablename__ = "tipo_usuario"
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tipo_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
-
-
-class Usuario(Base):
-    __tablename__ = "usuario"
-    id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(String(100), nullable=False)
-    apellido: Mapped[str] = mapped_column(String(100), nullable=False)
-    email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
-    tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
-
-class UsuarioOut(BaseModel):
-    id_usuario: int
-    nombre: str
-    apellido: str
-    email: str
-    tipo_usuario: TipoUsuario
-    class Config:
-        from_attributes = True
-
 class OrganismoSectorial(Base):
     __tablename__ = "organismo_sectorial"
     id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -89,6 +116,9 @@ class OrganismoSectorial(Base):
 
     def __init__(self, organismo_sectorial: str):
         self.organismo_sectorial = organismo_sectorial
+
+class OrganismoSectorialCreate(BaseModel):
+    organismo_sectorial: str = Field(..., min_length=3, max_length=100)
 
 class Frecuencia(Base):
     __tablename__ = "frecuencia"
@@ -98,6 +128,9 @@ class Frecuencia(Base):
     def __init__(self, frecuencia: str):
         self.frecuencia = frecuencia
 
+class FrecuenciaCreate(BaseModel):
+    frecuencia: str = Field(..., min_length=3, max_length=100)
+
 class TipoMedida(Base):
     __tablename__ = "tipo_medida"
     id_tipo_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -105,6 +138,9 @@ class TipoMedida(Base):
 
     def __init__(self, tipo_medida: str):
         self.tipo_medida = tipo_medida
+
+class TipoMedidaCreate(BaseModel):
+    tipo_medida: str = Field(..., min_length=3, max_length=100)
 
 class TipoDato(Base):
     __tablename__ = "tipo_dato"
@@ -121,6 +157,9 @@ class Opcion(Base):
 
     def __init__(self, opcion: str):
         self.opcion = opcion
+
+class OpcionCreate(BaseModel):
+    opcion: str = Field(..., min_length=1, max_length=100)
 
 class Medida(Base):
     __tablename__ = "medida"
@@ -139,10 +178,10 @@ class Medida(Base):
     desc_medio_de_verificacion: Mapped[str] = mapped_column(String(100), nullable=False)
     id_tipo_dato: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_dato.id_tipo_dato"), nullable=False)
     tipo_dato: Mapped[TipoDato] = relationship(TipoDato)
-    cron: Mapped[str] = mapped_column(String(100), nullable=False)
+    cron: Mapped[str | None] = mapped_column(String(100), nullable=True)
     reporte_unico: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, cron: str, reporte_unico: bool):
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, cron: str | None, reporte_unico: bool):
         self.nombre_corto = nombre_corto
         self.indicador = indicador
         self.formula_calculo = formula_calculo
@@ -155,6 +194,18 @@ class Medida(Base):
         self.cron = cron
         self.reporte_unico = reporte_unico
 
+class MedidaCreate(BaseModel):
+    nombre_corto: str
+    indicador: str
+    formula_calculo: str
+    id_frecuencia: int
+    id_organismo_sectorial: int
+    id_tipo_medida: int
+    desc_medio_de_verificacion: str
+    id_tipo_dato: int
+    cron: str | None
+    reporte_unico: bool
+
 class MedidaOut(BaseModel):
     id_medida: int
     nombre_corto: str
@@ -166,7 +217,7 @@ class MedidaOut(BaseModel):
     id_plan: int
     desc_medio_de_verificacion: str
     id_tipo_dato: int
-    cron: str
+    cron: str | None
     reporte_unico: bool
     class Config:
         from_attributes = True
@@ -182,6 +233,10 @@ class OpcionMedida(Base):
     def __init__(self, id_opcion: int, id_medida: int):
         self.id_opcion = id_opcion
         self.id_medida = id_medida
+
+class OpcionMedidaCreate(BaseModel):
+    id_opcion: int
+    id_medida: int
 
 class OpcionMedidaOut(BaseModel):
     id_opcion_medida: int

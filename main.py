@@ -1,9 +1,12 @@
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Body, HTTPException
+
+
+from api_examples import get_example
 from utils import get_local_now_datetime
 from db.models import (
-      Frecuencia, Medida, Opcion, OpcionMedida, OpcionMedidaOut, Plan, Region
-    , Comuna, ComunaOut, PlanComuna, TipoDato, TipoMedida, Usuario
-    , OrganismoSectorial, UsuarioOut, 
+      Frecuencia, FrecuenciaCreate, Medida, MedidaCreate, MedidaOut, Opcion, OpcionCreate, OpcionMedida
+    , OpcionMedidaCreate, OpcionMedidaOut, OrganismoSectorialCreate, Plan, PlanCreate, Region, Comuna, ComunaOut
+    , PlanComuna, TipoDato, TipoMedida, TipoMedidaCreate, TipoUsuario, Usuario, OrganismoSectorial, UsuarioCreate, UsuarioOut
 )
 from shared.dependencies import SyncDbSessionDep
 
@@ -53,6 +56,43 @@ def read_planes(
     planes = db.query(Plan).all()
     return planes
 
+@app.post("/plan", tags=["planes"], summary="Añade un plan", status_code=201)
+def add_plan(
+    db: SyncDbSessionDep,
+    plan: PlanCreate = Body(
+        openapi_examples={
+            "default": get_example("plan_post"),
+        }
+    ),
+):
+    if db.query(Plan).filter(Plan.nombre.ilike(plan.nombre)).first():
+        raise HTTPException(status_code=409, detail="Plan ya existe")
+    
+    data = Plan(
+        nombre=plan.nombre, 
+        descripcion=plan.descripcion, 
+        fecha_publicacion=plan.fecha_publicacion,
+        id_usuario_creacion=1
+    )
+
+    db.add(data)
+    db.commit()
+    db.refresh(data)
+    
+    return {"message": "Se creó plan", "plan": data}
+
+@app.delete("/plan/{id_plan}", tags=["planes"], summary="Elimina un plan por su id")
+def delete_plan(
+    id_plan: int,
+    db: SyncDbSessionDep,
+):
+    plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
+    if plan:
+        db.delete(plan)
+        db.commit()
+    return {"message": "Se eliminó plan"}
+
+
 @app.get("/plan/{id_plan}", response_model=Plan, tags=["planes"], summary="Obtener un plan por su id")
 def read_plan(
     id_plan: int,
@@ -71,7 +111,7 @@ def read_planes_comunas(
     comunas = db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
     return comunas
 
-@app.post("/plan/{id_plan}/comuna/{id_comuna}", tags=["planes"], summary="Agregar una comuna a un plan")
+@app.post("/plan/{id_plan}/comuna/{id_comuna}", tags=["planes"], summary="Agregar una comuna a un plan", status_code=201)
 def add_comuna_to_plan(
     id_plan: int,
     id_comuna: int,
@@ -110,6 +150,123 @@ def delete_comuna_from_plan(
     
     return {"message": "Se eliminó la comuna del plan"}
 
+@app.get("/plan/{id_plan}/medidas", response_model=list[MedidaOut], tags=["planes"], summary="Obtener todas las medidas de un plan")
+def read_planes_medidas(
+    id_plan: int,
+    db: SyncDbSessionDep,
+):
+    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
+        raise HTTPException(status_code=404, detail="El plan no existe")
+    
+    medidas = db.query(Medida).filter(Medida.id_plan == id_plan).all()
+    return medidas
+
+@app.post("/plan/{id_plan}/medida", tags=["planes"], summary="Agregar una medida a un plan", status_code=201)
+def add_medida(
+    db: SyncDbSessionDep,
+    id_plan: int,
+    medida: MedidaCreate = Body(
+        openapi_examples={
+            "default": get_example("medida_post"),
+        }
+    ),
+):
+    data = Medida(
+        nombre_corto=medida.nombre_corto, 
+        indicador=medida.indicador, 
+        formula_calculo=medida.formula_calculo, 
+        id_frecuencia=medida.id_frecuencia, 
+        id_organismo_sectorial=medida.id_organismo_sectorial, 
+        id_tipo_medida=medida.id_tipo_medida, 
+        id_plan=id_plan, 
+        desc_medio_de_verificacion=medida.desc_medio_de_verificacion, 
+        id_tipo_dato=medida.id_tipo_dato, 
+        cron=medida.cron, 
+        reporte_unico=medida.reporte_unico
+    )
+
+    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+        raise HTTPException(status_code=404, detail="Plan no existe")
+    if db.query(Medida).filter(Medida.nombre_corto.ilike(data.nombre_corto)).first():
+        raise HTTPException(status_code=409, detail="Medida ya existe")
+    if not db.query(Frecuencia).filter(Frecuencia.id_frecuencia==data.id_frecuencia).first():
+        raise HTTPException(status_code=404, detail="Frecuencia no existe")
+    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==data.id_organismo_sectorial).first():
+        raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
+    if not db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==data.id_tipo_medida).first():
+        raise HTTPException(status_code=404, detail="Tipo de medida no existe")
+    if not db.query(TipoDato).filter(TipoDato.id_tipo_dato==data.id_tipo_dato).first():
+        raise HTTPException(status_code=404, detail="Tipo de dato no existe")
+    
+    db.add(data)
+    db.commit()
+    db.refresh(data)
+    medida_out = MedidaOut(**data.__dict__)
+    return {"message": "Se creó medida", "medida": medida_out}
+
+@app.put("/plan/{id_plan}/medida/{id_medida}", tags=["planes"], summary="Actualizar una medida de un plan")
+def update_medida(
+    db: SyncDbSessionDep,
+    id_plan: int,
+    id_medida: int,
+    medida: MedidaCreate = Body(
+        openapi_examples={
+            "default": get_example("medida_post"),
+        }
+    ),
+):
+    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+        raise HTTPException(status_code=404, detail="Plan no existe")
+    
+    medida_db = db.query(Medida).filter(Medida.id_medida == id_medida).first()
+    if not medida_db:
+        raise HTTPException(status_code=404, detail="Medida no existe")
+    
+    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
+        raise HTTPException(status_code=404, detail="Medida no existe")
+    if not db.query(Frecuencia).filter(Frecuencia.id_frecuencia==medida.id_frecuencia).first():
+        raise HTTPException(status_code=404, detail="Frecuencia no existe")
+    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==medida.id_organismo_sectorial).first():
+        raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
+    if not db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==medida.id_tipo_medida).first():
+        raise HTTPException(status_code=404, detail="Tipo de medida no existe")
+    if not db.query(TipoDato).filter(TipoDato.id_tipo_dato==medida.id_tipo_dato).first():
+        raise HTTPException(status_code=404, detail="Tipo de dato no existe")
+    
+    medida_db.nombre_corto = medida.nombre_corto
+    medida_db.indicador = medida.indicador
+    medida_db.formula_calculo = medida.formula_calculo
+    medida_db.id_frecuencia = medida.id_frecuencia
+    medida_db.id_organismo_sectorial = medida.id_organismo_sectorial
+    medida_db.id_tipo_medida = medida.id_tipo_medida
+    medida_db.id_plan = id_plan
+    medida_db.desc_medio_de_verificacion = medida.desc_medio_de_verificacion
+    medida_db.id_tipo_dato = medida.id_tipo_dato
+    medida_db.cron = medida.cron
+    medida_db.reporte_unico = medida.reporte_unico
+
+    db.commit()
+    db.refresh(medida_db)
+
+    medida_out = MedidaOut(**medida_db.__dict__)
+    
+    return {"message": "Se actualizó la medida", "medida": medida_out}
+
+@app.delete("/plan/{id_plan}/medida/{id_medida}", tags=["planes"], summary="Elimina una medida de un plan por su id")
+def delete_medida(
+    id_plan: int,
+    id_medida: int,
+    db: SyncDbSessionDep,
+):
+    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+        raise HTTPException(status_code=404, detail="Plan no existe")
+    medida = db.query(Medida).filter(Medida.id_medida==id_medida).first()
+    if medida:
+        db.delete(medida)
+        db.commit()
+    return {"message": "Se eliminó medida"}
+
+
 @app.get("/usuarios", response_model=list[UsuarioOut], tags=["usuarios"], summary="Obtener todos los usuarios")
 def read_users(
     db: SyncDbSessionDep,
@@ -126,6 +283,46 @@ def read_user(
     if not usuario:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
     return usuario
+
+@app.post("/usuario", tags=["usuarios"], summary="Añade un usuario", status_code=201)
+def add_organismo(
+    db: SyncDbSessionDep,
+    usuario: UsuarioCreate = Body(
+        openapi_examples={
+            "default": get_example("usuario_post"),
+        }
+    ),
+):
+    if db.query(Usuario).filter(Usuario.email.ilike(usuario.email)).first():
+        raise HTTPException(status_code=409, detail="Usuario ya existe")
+    if not db.query(TipoUsuario).filter(TipoUsuario.id_tipo_usuario==usuario.id_tipo_usuario).first():
+        raise HTTPException(status_code=404, detail="Tipo de usuario no existe")
+
+    data = Usuario(
+        nombre=usuario.nombre,
+        apellido=usuario.apellido,
+        email=usuario.email, 
+        activo=usuario.activo,
+        id_tipo_usuario=usuario.id_tipo_usuario
+    )
+
+    db.add(data)
+    db.commit()
+    db.refresh(data)
+    return {"message": "Se creó el usuario", "usuario": data}
+
+@app.delete("/usuario/{id_usuario}", tags=["usuarios"], summary="Elimina un usuario por su id")
+def delete_usuario(
+    id_usuario: int,
+    db: SyncDbSessionDep,
+):
+    usuario = db.query(Usuario).filter(Usuario.id_usuario==id_usuario).first()
+    if usuario:
+        db.delete(usuario)
+        db.commit()
+
+    return {"message": "Se eliminó usuario"}
+
 
 @app.get("/organismos_sectoriales", response_model=list[OrganismoSectorial], tags=["organismos sectoriales"], summary="Obtener todos los organismos sectoriales")
 def read_organismos(
@@ -144,16 +341,26 @@ def read_organismo(
         raise HTTPException(status_code=404, detail="No existe organismo sectorial con ese id")
     return organismo
 
-@app.post("/organismo_sectorial", tags=["organismos sectoriales"], summary="Añade un organismo sectorial")
+@app.post("/organismo_sectorial", tags=["organismos sectoriales"], summary="Añade un organismo sectorial", status_code=201)
 def add_organismo(
     db: SyncDbSessionDep,
-    organismo_sectorial: str = Form(description="Nombre del organismo sectorial", min_length=3, 
-                                    max_length=100, example="Municipalidad de Santiago"),
+    organismo_sectorial: OrganismoSectorialCreate = Body(
+        openapi_examples={
+            "default": get_example("organismo_sectorial_post"),
+        }
+    ),
 ):
-    if db.query(OrganismoSectorial).filter(OrganismoSectorial.organismo_sectorial==organismo_sectorial).first():
+    nombre_organismo_sectorial = organismo_sectorial.organismo_sectorial
+    if db.query(OrganismoSectorial).filter(OrganismoSectorial.organismo_sectorial.ilike(nombre_organismo_sectorial)).first():
         raise HTTPException(status_code=409, detail="Organismo sectorial ya existe")
     
-    organismo = OrganismoSectorial(organismo_sectorial=organismo_sectorial)
+    if len(nombre_organismo_sectorial) < 3:
+        raise HTTPException(status_code=400, detail="Nombre de organismo sectorial muy corto")
+    if len(nombre_organismo_sectorial) > 100:
+        raise HTTPException(status_code=400, detail="Nombre de organismo sectorial muy largo")
+
+    
+    organismo = OrganismoSectorial(organismo_sectorial=nombre_organismo_sectorial)
     db.add(organismo)
     db.commit()
     db.refresh(organismo)
@@ -188,12 +395,24 @@ def read_frecuencia(
         raise HTTPException(status_code=404, detail="No existe frecuencia con ese id")
     return frecuencia
 
-@app.post("/frecuencia/", tags=["frecuencias"], summary="Añade una frecuencia")
+@app.post("/frecuencia", tags=["frecuencias"], summary="Añade una frecuencia", status_code=201)
 def add_frecuencia(
-    frecuencia: str,
     db: SyncDbSessionDep,
+    frecuencia: FrecuenciaCreate = Body(
+        openapi_examples={
+            "default": get_example("frecuencia_post"),
+        }
+    ),
 ):
-    frecuencia = Frecuencia(frecuencia=frecuencia)
+    nombre_frecuencia = frecuencia.frecuencia
+    if db.query(Frecuencia).filter(Frecuencia.frecuencia.ilike(nombre_frecuencia)).first():
+        raise HTTPException(status_code=409, detail="Frecuencia ya existe")
+    if len(nombre_frecuencia) < 3:
+        raise HTTPException(status_code=400, detail="Nombre de frecuencia muy corto")
+    if len(nombre_frecuencia) > 100:
+        raise HTTPException(status_code=400, detail="Nombre de frecuencia muy largo")
+
+    frecuencia = Frecuencia(frecuencia=nombre_frecuencia)
     db.add(frecuencia)
     db.commit()
     db.refresh(frecuencia)
@@ -205,9 +424,10 @@ def delete_frecuencia(
     db: SyncDbSessionDep,
 ):
     frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
-    db.delete(frecuencia)
-    db.commit()
-    return {"message": "Se eliminó frecuencia", "frecuencia": frecuencia}
+    if frecuencia:
+        db.delete(frecuencia)
+        db.commit()
+    return {"message": "Se eliminó frecuencia"}
 
 @app.get("/tipo_medidas", response_model=list[TipoMedida], tags=["tipo medidas"], summary="Obtener todos los tipos de medidas")
 def read_tipo_medidas(
@@ -226,12 +446,25 @@ def read_tipo_medida(
         raise HTTPException(status_code=404, detail="No existe tipo de medida con ese id")
     return tipo_medida
 
-@app.post("/tipo_medida/", tags=["tipo medidas"], summary="Añade un tipo de medida")
+@app.post("/tipo_medida/", tags=["tipo medidas"], summary="Añade un tipo de medida", status_code=201)
 def add_tipo_medida(
-    tipo_medida: str,
     db: SyncDbSessionDep,
+    tipo_medida: TipoMedidaCreate = Body(
+        openapi_examples={
+            "default": get_example("tipo_medida_post"),
+        }
+    ),
 ):
-    tipo_medida = TipoMedida(tipo_medida=tipo_medida)
+    nombre_tipo_medida = tipo_medida.tipo_medida
+    
+    if db.query(TipoMedida).filter(TipoMedida.tipo_medida.ilike(nombre_tipo_medida)).first():
+        raise HTTPException(status_code=409, detail="Tipo de medida ya existe")
+    if len(nombre_tipo_medida) < 3:
+        raise HTTPException(status_code=400, detail="Nombre de tipo de medida muy corto")
+    if len(nombre_tipo_medida) > 100:
+        raise HTTPException(status_code=400, detail="Nombre de tipo de medida muy largo")
+    
+    tipo_medida = TipoMedida(tipo_medida=nombre_tipo_medida)
     db.add(tipo_medida)
     db.commit()
     db.refresh(tipo_medida)
@@ -243,9 +476,10 @@ def delete_tipo_medida(
     db: SyncDbSessionDep,
 ):
     tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
-    db.delete(tipo_medida)
-    db.commit()
-    return {"message": "Se eliminó tipo de medida", "tipo de medida": tipo_medida}
+    if tipo_medida:
+        db.delete(tipo_medida)
+        db.commit()
+    return {"message": "Se eliminó tipo de medida"}
 
 @app.get("/tipos_datos", response_model=list[TipoDato], tags=["tipo datos"], summary="Obtener todos los tipos de datos")
 def read_tipo_datos(
@@ -258,25 +492,33 @@ def read_tipo_datos(
 def read_opciones_medidas(
     db: SyncDbSessionDep,
 ):
-    opciones_medidas = db.query(OpcionMedida).all()
+    opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
 
-@app.post("/opcion_medida", tags=["opciones medidas"], summary="Añade una opcion de medida")
+@app.post("/opcion_medida", tags=["opciones medidas"], summary="Añade una opcion de medida", status_code=201)
 def add_opcion_medida(
-    id_opcion: int,
-    id_medida: int,
     db: SyncDbSessionDep,
+    opcion_medida: OpcionMedidaCreate = Body(
+        openapi_examples={
+            "default": get_example("opcion_medida_post"),
+        }
+    ),
 ):
-    if not db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first():
+    opcion = db.query(Opcion).filter(Opcion.id_opcion==opcion_medida.id_opcion).first()
+    if not opcion:
         raise HTTPException(status_code=404, detail="Opcion no existe")
-    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
+    medida = db.query(Medida).filter(Medida.id_medida==opcion_medida.id_medida).first()
+    if not medida:
         raise HTTPException(status_code=404, detail="Medida no existe")
+    if db.query(OpcionMedida).filter(OpcionMedida.id_opcion==opcion_medida.id_opcion, OpcionMedida.id_medida==opcion_medida.id_medida).first():
+        raise HTTPException(status_code=409, detail="Opcion de medida ya existe")
     
-    opcion_medida = OpcionMedida(id_opcion=id_opcion, id_medida=id_medida)
+    opcion_medida = OpcionMedida(id_opcion=opcion_medida.id_opcion, id_medida=opcion_medida.id_medida)
     db.add(opcion_medida)
     db.commit()
     db.refresh(opcion_medida)
-    return {"message": "Se creó opcion de medida", "opcion de medida": opcion_medida}
+    opcion_medida_out = OpcionMedidaOut(id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida)
+    return {"message": "Se creó opcion de medida", "opcion_medida": opcion_medida_out}
 
 @app.delete("/opcion_medida/{id_opcion_medida}", tags=["opciones medidas"], summary="Elimina una opcion de medida")
 def delete_opcion_medida(
@@ -284,9 +526,10 @@ def delete_opcion_medida(
     db: SyncDbSessionDep,
 ): 
     opcion_medida = db.query(OpcionMedida).filter(OpcionMedida.id_opcion_medida==id_opcion_medida).first()
-    db.delete(opcion_medida)
-    db.commit()
-    return {"message": "Se eliminó opcion de medida", "opcion de medida": opcion_medida}
+    if opcion_medida:
+        db.delete(opcion_medida)
+        db.commit()
+    return {"message": "Se eliminó opcion de medida"}
 
 @app.get("/opciones", response_model=list[Opcion], tags=["opciones"], summary="Obtener todas las opciones")
 def read_opciones(
@@ -295,89 +538,37 @@ def read_opciones(
     opciones = db.query(Opcion).all()
     return opciones
 
-@app.post("/opcion", tags=["opciones"], summary="Añade una opcion")
+@app.post("/opcion", tags=["opciones"], summary="Añade una opcion", status_code=201)
 def add_opcion(
-    opcion: str,
     db: SyncDbSessionDep,
+    opcion: OpcionCreate = Body(
+        openapi_examples={
+            "default": get_example("opcion_post"),
+        }
+    ),
 ):
-    opcion = Opcion(opcion=opcion)
+    nombre_opcion = opcion.opcion
+    if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion)).first():
+        raise HTTPException(status_code=409, detail="Opcion ya existe")
+    if len(opcion.opcion) == 0:
+        raise HTTPException(status_code=400, detail="Opcion no puede ser vacío")
+    if len(opcion.opcion) > 100:
+        raise HTTPException(status_code=400, detail="Opcion muy larga")
+    
+    opcion = Opcion(opcion=nombre_opcion)
     db.add(opcion)
     db.commit()
     db.refresh(opcion)
     return {"message": "Se creó opcion", "opcion": opcion}
 
-@app.delete("/opcion/{id_opcion}", tags=["opciones"], summary="Elimina una opcion")
+@app.delete("/opcion/{id_opcion}", tags=["opciones"], summary="Elimina una opción")
 def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
 ):
     opcion = db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first()
-    if not opcion:
-        raise HTTPException(status_code=404, detail="No se pudo borrar la opcion")
+    if opcion:
+        db.delete(opcion)
+        db.commit()
+    return {"message": "Se eliminó opción"}
 
-    db.delete(opcion)
-    db.commit()
-    return {"message": "Se eliminó opcion", "opcion": opcion}
-
-@app.get("/medidas", response_model=list[Medida], tags=["medidas"], summary="Obtener todas las medidas")
-def read_medidas(
-    db:SyncDbSessionDep,
-):
-    medidas = db.query(Medida).all()
-    return medidas
-
-@app.get("/medida/{id_medida}", response_model=Medida, tags=["medidas"], summary="Obtener una medida por su id")
-def read_medida(
-    id_medida: int,
-    db: SyncDbSessionDep,
-):
-    medida = db.query(Medida).filter(Medida.id_medida == id_medida).first()
-    if not medida:
-        raise HTTPException(status_code=404, detail="No existe medida con ese id")
-    return medida
-
-@app.post("/medida", tags=["medidas"], summary="Añade una medida")
-def add_medida(
-    nombre_corto: str,
-    indicador: str,
-    formula_calculo: str,
-    id_frecuencia: int,
-    id_organismo_sectorial: int,
-    id_tipo_medida: int,
-    id_plan: int,
-    desc_medio_de_verificacion: str,
-    id_tipo_dato: int,
-    cron: str,
-    reporte_unico: bool,
-    db: SyncDbSessionDep,
-):
-    medida = Medida(
-        nombre_corto=nombre_corto, 
-        indicador=indicador, 
-        formula_calculo=formula_calculo, 
-        id_frecuencia=id_frecuencia, 
-        id_organismo_sectorial=id_organismo_sectorial, 
-        id_tipo_medida=id_tipo_medida, 
-        id_plan=id_plan, 
-        desc_medio_de_verificacion=desc_medio_de_verificacion, 
-        id_tipo_dato=id_tipo_dato, cron=cron, 
-        reporte_unico=reporte_unico)
-    db.add(medida)
-    db.commit()
-    db.refresh(medida)
-    return {"message": "Se creó medida", "medida": medida}
-
-@app.delete("/medida/{id_medida}", tags=["medidas"], summary="Elimina una medida por su id")
-def delete_medida(
-    id_medida: int,
-    db: SyncDbSessionDep,
-):
-    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
-        raise HTTPException(status_code=404, detail="No existe medida con ese id")
-
-    medida = db.query(Medida).filter(Medida.id_medida==id_medida).first()
-    db.delete(medida)
-    db.commit()
-    return {"message": "Se eliminó medida", "medida": medida}
-
-# TODO Falta implementar validadores para cada campo
