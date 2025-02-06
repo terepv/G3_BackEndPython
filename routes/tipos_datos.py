@@ -4,7 +4,13 @@ from shared.dependencies import SyncDbSessionDep
 
 router = APIRouter(prefix="/tipos_datos", tags=["Tipos de Datos"])
 
-@router.get("/", response_model=list[TipoDato], summary="Obtener todos los tipos de datos")
+
+@router.get(
+    "/",
+    response_model=list[TipoDato],
+    summary="Obtener todos los tipos de datos",
+    description="Devuelve un listado de todos los tipos de datos",
+)
 def read_tipo_datos(
     db: SyncDbSessionDep,
 ):

@@ -6,14 +6,26 @@ from shared.utils import get_example
 
 router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 
-@router.get("/", response_model=list[OpcionMedidaOut], summary="Obtener todas las opciones de medidas")
+
+@router.get(
+    "/",
+    response_model=list[OpcionMedidaOut],
+    summary="Obtener todas las opciones de medidas",
+    description="Devuelve un listado de todas las opciones de medidas",
+)
 def read_opciones_medidas(
     db: SyncDbSessionDep,
 ):
     opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
 
-@router.post("/", summary="Añade una opcion de medida", status_code=201)
+
+@router.post(
+    "/",
+    summary="Añade una opcion de medida",
+    status_code=201,
+    description="Crea una opcion de medida",
+)
 def add_opcion_medida(
     db: SyncDbSessionDep,
     opcion_medida: OpcionMedidaCreate = Body(
@@ -22,28 +34,52 @@ def add_opcion_medida(
         }
     ),
 ):
-    opcion = db.query(Opcion).filter(Opcion.id_opcion==opcion_medida.id_opcion).first()
+    opcion = (
+        db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
+    )
     if not opcion:
         raise HTTPException(status_code=404, detail="Opcion no existe")
-    medida = db.query(Medida).filter(Medida.id_medida==opcion_medida.id_medida).first()
+    medida = (
+        db.query(Medida).filter(Medida.id_medida == opcion_medida.id_medida).first()
+    )
     if not medida:
         raise HTTPException(status_code=404, detail="Medida no existe")
-    if db.query(OpcionMedida).filter(OpcionMedida.id_opcion==opcion_medida.id_opcion, OpcionMedida.id_medida==opcion_medida.id_medida).first():
+    if (
+        db.query(OpcionMedida)
+        .filter(
+            OpcionMedida.id_opcion == opcion_medida.id_opcion,
+            OpcionMedida.id_medida == opcion_medida.id_medida,
+        )
+        .first()
+    ):
         raise HTTPException(status_code=409, detail="Opcion de medida ya existe")
-    
-    opcion_medida = OpcionMedida(id_opcion=opcion_medida.id_opcion, id_medida=opcion_medida.id_medida)
+
+    opcion_medida = OpcionMedida(
+        id_opcion=opcion_medida.id_opcion, id_medida=opcion_medida.id_medida
+    )
     db.add(opcion_medida)
     db.commit()
     db.refresh(opcion_medida)
-    opcion_medida_out = OpcionMedidaOut(id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida)
+    opcion_medida_out = OpcionMedidaOut(
+        id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida
+    )
     return {"message": "Se creó opcion de medida", "opcion_medida": opcion_medida_out}
 
-@router.delete("/{id_opcion_medida}", summary="Elimina una opcion de medida")
+
+@router.delete(
+    "/{id_opcion_medida}",
+    summary="Elimina una opcion de medida",
+    description="Elimina una opcion de medida por su id",
+)
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
-): 
-    opcion_medida = db.query(OpcionMedida).filter(OpcionMedida.id_opcion_medida==id_opcion_medida).first()
+):
+    opcion_medida = (
+        db.query(OpcionMedida)
+        .filter(OpcionMedida.id_opcion_medida == id_opcion_medida)
+        .first()
+    )
     if opcion_medida:
         db.delete(opcion_medida)
         db.commit()

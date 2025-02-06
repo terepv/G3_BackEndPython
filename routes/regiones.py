@@ -4,14 +4,26 @@ from shared.dependencies import SyncDbSessionDep
 
 router = APIRouter(prefix="/regiones", tags=["Regiones"])
 
-@router.get("/", response_model=list[Region], summary="Obtener todas las regiones")
+
+@router.get(
+    "/",
+    response_model=list[Region],
+    summary="Obtener todas las regiones",
+    description="Devuelve un listado de todas las regiones",
+)
 def read_regions(
     db: SyncDbSessionDep,
 ):
     regions = db.query(Region).all()
     return regions
 
-@router.get("/{id_region}", response_model=Region, summary="Obtener una region por su id")
+
+@router.get(
+    "/{id_region}",
+    response_model=Region,
+    summary="Obtener una region por su id",
+    description="Devuelve una región por su id",
+)
 def read_region(
     id_region: int,
     db: SyncDbSessionDep,

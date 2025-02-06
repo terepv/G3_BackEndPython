@@ -6,14 +6,23 @@ from shared.utils import get_example
 
 router = APIRouter(prefix="/opciones", tags=["Opciones"])
 
-@router.get("/", response_model=list[Opcion], summary="Obtener todas las opciones")
+
+@router.get(
+    "/",
+    response_model=list[Opcion],
+    summary="Obtener todas las opciones",
+    description="Devuelve un listado de todas las opciones",
+)
 def read_opciones(
     db: SyncDbSessionDep,
 ):
     opciones = db.query(Opcion).all()
     return opciones
 
-@router.post("/", summary="Añade una opcion", status_code=201)
+
+@router.post(
+    "/", summary="Añade una opcion", status_code=201, description="Crea una opción"
+)
 def add_opcion(
     db: SyncDbSessionDep,
     opcion: OpcionCreate = Body(
@@ -29,19 +38,24 @@ def add_opcion(
         raise HTTPException(status_code=400, detail="Opcion no puede ser vacío")
     if len(opcion.opcion) > 100:
         raise HTTPException(status_code=400, detail="Opcion muy larga")
-    
+
     opcion = Opcion(opcion=nombre_opcion)
     db.add(opcion)
     db.commit()
     db.refresh(opcion)
     return {"message": "Se creó opcion", "opcion": opcion}
 
-@router.delete("/{id_opcion}", summary="Elimina una opción")
+
+@router.delete(
+    "/{id_opcion}",
+    summary="Elimina una opción",
+    description="Elimina una opción por su id",
+)
 def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
 ):
-    opcion = db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first()
+    opcion = db.query(Opcion).filter(Opcion.id_opcion == id_opcion).first()
     if opcion:
         db.delete(opcion)
         db.commit()

@@ -6,18 +6,30 @@ from shared.utils import get_example
 
 router = APIRouter(prefix="/planes/{id_plan}/medidas", tags=["Planes - Medidas"])
 
-@router.get("/", response_model=list[MedidaOut], summary="Obtener todas las medidas de un plan")
+
+@router.get(
+    "/",
+    response_model=list[MedidaOut],
+    summary="Obtener todas las medidas de un plan",
+    description="Devuelve un listado de todas las medidas de un plan",
+)
 def read_planes_medidas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
-    
+
     medidas = db.query(Medida).filter(Medida.id_plan == id_plan).all()
     return medidas
 
-@router.post("/", summary="Agregar una medida a un plan", status_code=201)
+
+@router.post(
+    "/",
+    summary="Agregar una medida a un plan",
+    status_code=201,
+    description="Crea una medida en un plan",
+)
 def add_medida(
     db: SyncDbSessionDep,
     id_plan: int,
@@ -28,39 +40,62 @@ def add_medida(
     ),
 ):
     data = Medida(
-        nombre_corto=medida.nombre_corto, 
-        indicador=medida.indicador, 
-        formula_calculo=medida.formula_calculo, 
-        id_frecuencia=medida.id_frecuencia, 
-        id_organismo_sectorial=medida.id_organismo_sectorial, 
-        id_tipo_medida=medida.id_tipo_medida, 
-        id_plan=id_plan, 
-        desc_medio_de_verificacion=medida.desc_medio_de_verificacion, 
-        id_tipo_dato=medida.id_tipo_dato, 
-        cron=medida.cron, 
-        reporte_unico=medida.reporte_unico
+        nombre_corto=medida.nombre_corto,
+        indicador=medida.indicador,
+        formula_calculo=medida.formula_calculo,
+        id_frecuencia=medida.id_frecuencia,
+        id_organismo_sectorial=medida.id_organismo_sectorial,
+        id_tipo_medida=medida.id_tipo_medida,
+        id_plan=id_plan,
+        desc_medio_de_verificacion=medida.desc_medio_de_verificacion,
+        id_tipo_dato=medida.id_tipo_dato,
+        cron=medida.cron,
+        reporte_unico=medida.reporte_unico,
     )
 
-    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
     if db.query(Medida).filter(Medida.nombre_corto.ilike(data.nombre_corto)).first():
         raise HTTPException(status_code=409, detail="Medida ya existe")
-    if not db.query(Frecuencia).filter(Frecuencia.id_frecuencia==data.id_frecuencia).first():
+    if (
+        not db.query(Frecuencia)
+        .filter(Frecuencia.id_frecuencia == data.id_frecuencia)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Frecuencia no existe")
-    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==data.id_organismo_sectorial).first():
+    if (
+        not db.query(OrganismoSectorial)
+        .filter(
+            OrganismoSectorial.id_organismo_sectorial == data.id_organismo_sectorial
+        )
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
-    if not db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==data.id_tipo_medida).first():
+    if (
+        not db.query(TipoMedida)
+        .filter(TipoMedida.id_tipo_medida == data.id_tipo_medida)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Tipo de medida no existe")
-    if not db.query(TipoDato).filter(TipoDato.id_tipo_dato==data.id_tipo_dato).first():
+    if (
+        not db.query(TipoDato)
+        .filter(TipoDato.id_tipo_dato == data.id_tipo_dato)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Tipo de dato no existe")
-    
+
     db.add(data)
     db.commit()
     db.refresh(data)
     medida_out = MedidaOut(**data.__dict__)
     return {"message": "Se creó medida", "medida": medida_out}
 
-@router.put("/{id_medida}", summary="Actualizar una medida de un plan")
+
+@router.put(
+    "/{id_medida}",
+    summary="Actualizar una medida de un plan",
+    description="Actualiza una medida de un plan por su id",
+)
 def update_medida(
     db: SyncDbSessionDep,
     id_plan: int,
@@ -71,24 +106,42 @@ def update_medida(
         }
     ),
 ):
-    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
-    
+
     medida_db = db.query(Medida).filter(Medida.id_medida == id_medida).first()
     if not medida_db:
         raise HTTPException(status_code=404, detail="Medida no existe")
-    
-    if not db.query(Medida).filter(Medida.id_medida==id_medida).first():
+
+    if not db.query(Medida).filter(Medida.id_medida == id_medida).first():
         raise HTTPException(status_code=404, detail="Medida no existe")
-    if not db.query(Frecuencia).filter(Frecuencia.id_frecuencia==medida.id_frecuencia).first():
+    if (
+        not db.query(Frecuencia)
+        .filter(Frecuencia.id_frecuencia == medida.id_frecuencia)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Frecuencia no existe")
-    if not db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==medida.id_organismo_sectorial).first():
+    if (
+        not db.query(OrganismoSectorial)
+        .filter(
+            OrganismoSectorial.id_organismo_sectorial == medida.id_organismo_sectorial
+        )
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
-    if not db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==medida.id_tipo_medida).first():
+    if (
+        not db.query(TipoMedida)
+        .filter(TipoMedida.id_tipo_medida == medida.id_tipo_medida)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Tipo de medida no existe")
-    if not db.query(TipoDato).filter(TipoDato.id_tipo_dato==medida.id_tipo_dato).first():
+    if (
+        not db.query(TipoDato)
+        .filter(TipoDato.id_tipo_dato == medida.id_tipo_dato)
+        .first()
+    ):
         raise HTTPException(status_code=404, detail="Tipo de dato no existe")
-    
+
     medida_db.nombre_corto = medida.nombre_corto
     medida_db.indicador = medida.indicador
     medida_db.formula_calculo = medida.formula_calculo
@@ -105,18 +158,23 @@ def update_medida(
     db.refresh(medida_db)
 
     medida_out = MedidaOut(**medida_db.__dict__)
-    
+
     return {"message": "Se actualizó la medida", "medida": medida_out}
 
-@router.delete("/{id_medida}", summary="Elimina una medida de un plan por su id")
+
+@router.delete(
+    "/{id_medida}",
+    summary="Elimina una medida de un plan por su id",
+    description="Elimina una medida de un plan por su id",
+)
 def delete_medida(
     id_plan: int,
     id_medida: int,
     db: SyncDbSessionDep,
 ):
-    if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
+    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
-    medida = db.query(Medida).filter(Medida.id_medida==id_medida).first()
+    medida = db.query(Medida).filter(Medida.id_medida == id_medida).first()
     if medida:
         db.delete(medida)
         db.commit()
