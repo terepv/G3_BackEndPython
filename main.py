@@ -15,10 +15,12 @@ app = FastAPI(
     description=f"Last deployment: {get_local_now_datetime()}",
 )
 
-@app.get("/regiones", response_model=list[Region], tags=["regiones"], summary="Obtener todas las regiones")
+@app.get("/regiones", response_model=list[Region], tags=["regiones"], 
+         summary="Obtener todas las regiones")
 def read_regions(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve todas las regiones. """
     regions = db.query(Region).all()
     return regions
 
@@ -27,6 +29,10 @@ def read_region(
     id_region: int,
     db: SyncDbSessionDep,
 ):
+    """ 
+    Devuelve una región por su id. 
+    Argumentos: ID de región. 
+    """
     region = db.query(Region).filter(Region.id_region == id_region).first()
     if not region:
         raise HTTPException(status_code=404, detail="No existe región con ese id")
@@ -36,6 +42,7 @@ def read_region(
 def read_comunas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve todas las comunas. """
     comunas = db.query(Comuna).join(Region).all()
     return comunas
 
@@ -44,6 +51,10 @@ def read_comuna(
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve una comuna por su id. 
+    Argumentos: id de región.
+    """
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     if not comuna:
         raise HTTPException(status_code=404, detail="No existe comuna con ese id")
@@ -53,6 +64,7 @@ def read_comuna(
 def read_planes(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve todos los planes. """
     planes = db.query(Plan).all()
     return planes
 
@@ -65,6 +77,13 @@ def add_plan(
         }
     ),
 ):
+    """ Agrega un plan a la base de datos.
+    Argumentos:
+    - nombre del plan (str)
+    - descripción del plan (str)
+    - fecha publicación del plan (datetime) 
+    - id usuario (int)
+    """
     if db.query(Plan).filter(Plan.nombre.ilike(plan.nombre)).first():
         raise HTTPException(status_code=409, detail="Plan ya existe")
     
@@ -86,6 +105,10 @@ def delete_plan(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un plan por su id
+    Argumentos: id de plan.
+    """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     if plan:
         db.delete(plan)
@@ -98,6 +121,10 @@ def read_plan(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve un plan por su id
+    Argumentos: id de plan. 
+    """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     if not plan:
         raise HTTPException(status_code=404, detail="No existe plan con ese id")
@@ -108,6 +135,7 @@ def read_planes_comunas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """ Devuelve todas las comunas de un plan. """
     comunas = db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
     return comunas
 
@@ -117,6 +145,11 @@ def add_comuna_to_plan(
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """ Agrega una comuna a un plan.
+    Argumentos:
+    - id_plan (int)
+    - id_comuna (int)
+    """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     
@@ -141,6 +174,12 @@ def delete_comuna_from_plan(
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una comuna de un plan, por su id.
+    Argumentos:
+    - id plan (int)
+    - id comuna (int)
+    """
     if not db.query(PlanComuna).filter(PlanComuna.id_plan == id_plan, PlanComuna.id_comuna == id_comuna).first():
         return {"message": "Se eliminó la comuna del plan"}
     
@@ -155,6 +194,10 @@ def read_planes_medidas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve todas las medidas asociadas a un plan.
+    Argumentos: id plan (int)
+    """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
     
@@ -171,6 +214,19 @@ def add_medida(
         }
     ),
 ):
+    """
+    Agrega una medida a un plan.
+    Argumentos:
+    - nombre corto medida (str)
+    - indicador de la medida (str)
+    - id frecuencia de la medida (int)
+    - id organismo sectorial (int)
+    - id tipo de medida (int)
+    - id del plan (int)
+    - descripción medio de verificación (str)
+    - id tipo de dato (int)
+    - 
+    """
     data = Medida(
         nombre_corto=medida.nombre_corto, 
         indicador=medida.indicador, 
@@ -571,4 +627,3 @@ def delete_opcion(
         db.delete(opcion)
         db.commit()
     return {"message": "Se eliminó opción"}
-
