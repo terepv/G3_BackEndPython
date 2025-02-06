@@ -15,12 +15,11 @@ app = FastAPI(
     description=f"Last deployment: {get_local_now_datetime()}",
 )
 
-@app.get("/regiones", response_model=list[Region], tags=["regiones"], 
-         summary="Obtener todas las regiones")
+@app.get("/regiones", response_model=list[Region], tags=["regiones"], summary="Obtener todas las regiones")
 def read_regions(
     db: SyncDbSessionDep,
 ):
-    """ Devuelve todas las regiones. """
+    """ Devuelve una lista con todas las regiones. """
     regions = db.query(Region).all()
     return regions
 
@@ -31,7 +30,8 @@ def read_region(
 ):
     """ 
     Devuelve una región por su id. 
-    Argumentos: ID de región. 
+    Argumentos:
+    - id región (int)
     """
     region = db.query(Region).filter(Region.id_region == id_region).first()
     if not region:
@@ -42,7 +42,7 @@ def read_region(
 def read_comunas(
     db: SyncDbSessionDep,
 ):
-    """ Devuelve todas las comunas. """
+    """ Devuelve una lista con todas las comunas. """
     comunas = db.query(Comuna).join(Region).all()
     return comunas
 
@@ -53,7 +53,8 @@ def read_comuna(
 ):
     """
     Devuelve una comuna por su id. 
-    Argumentos: id de región.
+    Argumentos: 
+    - id de comuna (int)
     """
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     if not comuna:
@@ -64,7 +65,7 @@ def read_comuna(
 def read_planes(
     db: SyncDbSessionDep,
 ):
-    """ Devuelve todos los planes. """
+    """ Devuelve una lista con todos los planes. """
     planes = db.query(Plan).all()
     return planes
 
@@ -83,6 +84,8 @@ def add_plan(
     - descripción del plan (str)
     - fecha publicación del plan (datetime) 
     - id usuario (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
     """
     if db.query(Plan).filter(Plan.nombre.ilike(plan.nombre)).first():
         raise HTTPException(status_code=409, detail="Plan ya existe")
@@ -106,8 +109,11 @@ def delete_plan(
     db: SyncDbSessionDep,
 ):
     """
-    Elimina un plan por su id
-    Argumentos: id de plan.
+    Elimina un plan por su id.
+    Argumentos: 
+    - id de plan (int)
+
+    Devuelve mensaje de confirmación.
     """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     if plan:
@@ -123,7 +129,8 @@ def read_plan(
 ):
     """
     Devuelve un plan por su id
-    Argumentos: id de plan. 
+    Argumentos: 
+    - id de plan. (int)
     """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     if not plan:
@@ -135,7 +142,7 @@ def read_planes_comunas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
-    """ Devuelve todas las comunas de un plan. """
+    """ Devuelve una lista con todas las comunas de un plan. """
     comunas = db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
     return comunas
 
@@ -145,10 +152,13 @@ def add_comuna_to_plan(
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
-    """ Agrega una comuna a un plan.
+    """
+    Agrega una comuna a un plan.
     Argumentos:
     - id_plan (int)
     - id_comuna (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
     """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
@@ -179,6 +189,8 @@ def delete_comuna_from_plan(
     Argumentos:
     - id plan (int)
     - id comuna (int)
+
+    Devuelve mensaje de confirmación.
     """
     if not db.query(PlanComuna).filter(PlanComuna.id_plan == id_plan, PlanComuna.id_comuna == id_comuna).first():
         return {"message": "Se eliminó la comuna del plan"}
@@ -195,8 +207,9 @@ def read_planes_medidas(
     db: SyncDbSessionDep,
 ):
     """
-    Devuelve todas las medidas asociadas a un plan.
-    Argumentos: id plan (int)
+    Devuelve una lista con todas las medidas asociadas a un plan.
+    Argumentos: 
+    - id plan (int)
     """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
@@ -217,15 +230,18 @@ def add_medida(
     """
     Agrega una medida a un plan.
     Argumentos:
+    - id del plan (int)
     - nombre corto medida (str)
     - indicador de la medida (str)
     - id frecuencia de la medida (int)
     - id organismo sectorial (int)
     - id tipo de medida (int)
-    - id del plan (int)
     - descripción medio de verificación (str)
     - id tipo de dato (int)
-    - 
+    - cron (str)
+    - reporte unico (bool)
+
+    Devuelve mensaje de confirmación con el recurso creado.
     """
     data = Medida(
         nombre_corto=medida.nombre_corto, 
@@ -271,6 +287,23 @@ def update_medida(
         }
     ),
 ):
+    """
+    Actualiza una medida de un plan.
+    Argumentos:
+    - id del plan (int) 
+    - id de medida (int)
+    - nombre corto medida (str)
+    - indicador de la medida (str)
+    - id frecuencia de la medida (int)
+    - id organismo sectorial (int)
+    - id tipo de medida (int)
+    - descripción medio de verificación (str)
+    - id tipo de dato (int)
+    - cron (str)
+    - reporte unico (bool)
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+    """
     if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
     
@@ -314,6 +347,14 @@ def delete_medida(
     id_medida: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una medida de un plan por su id.
+    Argumentos:
+    - id plan (int)
+    - id medida (int)
+
+    Devuelve mensaje de confirmación.
+    """
     if not db.query(Plan).filter(Plan.id_plan==id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
     medida = db.query(Medida).filter(Medida.id_medida==id_medida).first()
@@ -327,6 +368,7 @@ def delete_medida(
 def read_users(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los usuarios. """
     users = db.query(Usuario).all()
     return users
 
@@ -335,13 +377,18 @@ def read_user(
     id_usuario: int,
     db: SyncDbSessionDep,
 ):
+    """ 
+    Devuelve un usuario por su id.
+    Argumentos: 
+    - id usuario (int)
+    """
     usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
     return usuario
 
 @app.post("/usuario", tags=["usuarios"], summary="Añade un usuario", status_code=201)
-def add_organismo(
+def add_user(
     db: SyncDbSessionDep,
     usuario: UsuarioCreate = Body(
         openapi_examples={
@@ -349,6 +396,17 @@ def add_organismo(
         }
     ),
 ):
+    """
+    Agrega un usuario. 
+    Argumentos:
+    - nombre (str)
+    - apellido (str)
+    - email (str)
+    - usuario activo (bool)
+    - id tipo de usuario (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     if db.query(Usuario).filter(Usuario.email.ilike(usuario.email)).first():
         raise HTTPException(status_code=409, detail="Usuario ya existe")
     if not db.query(TipoUsuario).filter(TipoUsuario.id_tipo_usuario==usuario.id_tipo_usuario).first():
@@ -372,6 +430,13 @@ def delete_usuario(
     id_usuario: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un usuario por su id.
+    Argumentos: 
+    - id usuario (int)
+
+    Devuelve mensaje de confirmación.
+    """
     usuario = db.query(Usuario).filter(Usuario.id_usuario==id_usuario).first()
     if usuario:
         db.delete(usuario)
@@ -384,6 +449,7 @@ def delete_usuario(
 def read_organismos(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los organismos sectoriales. """
     organismos = db.query(OrganismoSectorial).all()
     return organismos
 
@@ -392,6 +458,11 @@ def read_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve un organismo sectorial por su id.
+    Argumentos: 
+    - id organismo sectorial (int)
+    """
     organismo = db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first()
     if not organismo:
         raise HTTPException(status_code=404, detail="No existe organismo sectorial con ese id")
@@ -406,6 +477,13 @@ def add_organismo(
         }
     ),
 ):
+    """
+    Agrega un organismo sectorial a la base de datos.
+    Argumentos:
+    - organismo sectorial (str).
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_organismo_sectorial = organismo_sectorial.organismo_sectorial
     if db.query(OrganismoSectorial).filter(OrganismoSectorial.organismo_sectorial.ilike(nombre_organismo_sectorial)).first():
         raise HTTPException(status_code=409, detail="Organismo sectorial ya existe")
@@ -427,6 +505,13 @@ def delete_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un organismo sectorial por su id.
+    Argumentos:
+    - id organismo sectorial (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     organismo = db.query(OrganismoSectorial).filter(OrganismoSectorial.id_organismo_sectorial==id_organismo_sectorial).first()
     if organismo:
         db.delete(organismo)
@@ -438,6 +523,7 @@ def delete_organismo(
 def read_frecuencias(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las frecuencias. """
     frecuencias = db.query(Frecuencia).all()
     return frecuencias
 
@@ -446,6 +532,11 @@ def read_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve una frecuencia por su id.
+    Argumentos:
+    - id frecuencia (int)
+    """
     frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
     if not frecuencia:
         raise HTTPException(status_code=404, detail="No existe frecuencia con ese id")
@@ -460,6 +551,13 @@ def add_frecuencia(
         }
     ),
 ):
+    """
+    Agrega una frecuencia a la base de datos.
+    Argumentos:
+    - frecuencia (str)
+    
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_frecuencia = frecuencia.frecuencia
     if db.query(Frecuencia).filter(Frecuencia.frecuencia.ilike(nombre_frecuencia)).first():
         raise HTTPException(status_code=409, detail="Frecuencia ya existe")
@@ -479,6 +577,13 @@ def delete_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una frecuencia por su id.
+    Argumentos:
+    - id frecuencia (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     frecuencia = db.query(Frecuencia).filter(Frecuencia.id_frecuencia==id_frecuencia).first()
     if frecuencia:
         db.delete(frecuencia)
@@ -489,6 +594,7 @@ def delete_frecuencia(
 def read_tipo_medidas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los tipos de medidas. """
     tipo_medidas = db.query(TipoMedida).all()
     return tipo_medidas
 
@@ -497,6 +603,11 @@ def read_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
 ):
+    """ 
+    Devuelve un tipo de medida por su id.
+    Argumentos:
+    - id tipo de medida (int)
+    """
     tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
     if not tipo_medida:
         raise HTTPException(status_code=404, detail="No existe tipo de medida con ese id")
@@ -511,6 +622,13 @@ def add_tipo_medida(
         }
     ),
 ):
+    """
+    Agrega un tipo de medida a la base de datos.
+    Argumentos:
+    - tipo de medida (str)
+    
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_tipo_medida = tipo_medida.tipo_medida
     
     if db.query(TipoMedida).filter(TipoMedida.tipo_medida.ilike(nombre_tipo_medida)).first():
@@ -531,6 +649,13 @@ def delete_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un tipo de medida por su id.
+    Argumentos:
+    - id tipo de medida (int)
+
+    Devuelve mensaje de confirmación.
+    """
     tipo_medida = db.query(TipoMedida).filter(TipoMedida.id_tipo_medida==id_tipo_medida).first()
     if tipo_medida:
         db.delete(tipo_medida)
@@ -541,6 +666,7 @@ def delete_tipo_medida(
 def read_tipo_datos(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista de todos los tipos de datos. """
     tipo_datos = db.query(TipoDato).all()
     return tipo_datos
 
@@ -548,6 +674,7 @@ def read_tipo_datos(
 def read_opciones_medidas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las asociaciones de opciones y medidas. """
     opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
 
@@ -560,6 +687,14 @@ def add_opcion_medida(
         }
     ),
 ):
+    """
+    Agrega una relación de opción y medida a la base de datos.
+    Argumentos:
+    - id opción (int)
+    - id medida (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     opcion = db.query(Opcion).filter(Opcion.id_opcion==opcion_medida.id_opcion).first()
     if not opcion:
         raise HTTPException(status_code=404, detail="Opcion no existe")
@@ -581,6 +716,13 @@ def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
 ): 
+    """
+    Elimina una relación de opción-medida por su id.
+    Argumentos:
+    - id opción de medida (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     opcion_medida = db.query(OpcionMedida).filter(OpcionMedida.id_opcion_medida==id_opcion_medida).first()
     if opcion_medida:
         db.delete(opcion_medida)
@@ -591,6 +733,7 @@ def delete_opcion_medida(
 def read_opciones(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las opciones. """
     opciones = db.query(Opcion).all()
     return opciones
 
@@ -603,6 +746,13 @@ def add_opcion(
         }
     ),
 ):
+    """
+    Agrega una opción a la base de datos.
+    Argumentos:
+    - opción (str)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_opcion = opcion.opcion
     if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion)).first():
         raise HTTPException(status_code=409, detail="Opcion ya existe")
@@ -622,6 +772,13 @@ def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una opción por su id.
+    Argumentos:
+    - id opción (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     opcion = db.query(Opcion).filter(Opcion.id_opcion==id_opcion).first()
     if opcion:
         db.delete(opcion)
