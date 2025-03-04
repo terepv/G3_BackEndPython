@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, Depends
 
 
 from api_examples import get_example
@@ -8,7 +8,7 @@ from db.models import (
     , OpcionMedidaCreate, OpcionMedidaOut, OrganismoSectorialCreate, Plan, PlanCreate, Region, Comuna, ComunaOut
     , PlanComuna, TipoDato, TipoMedida, TipoMedidaCreate, TipoUsuario, Usuario, OrganismoSectorial, UsuarioCreate, UsuarioOut
 )
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import SyncDbSessionDep, check_auth
 
 app = FastAPI(
     title="REST API REPORTES PPDA",
@@ -18,6 +18,7 @@ app = FastAPI(
 @app.get("/regiones", response_model=list[Region], tags=["regiones"], summary="Obtener todas las regiones")
 def read_regions(
     db: SyncDbSessionDep,
+    bool=Depends(check_auth)
 ):
     """ Devuelve una lista con todas las regiones. """
     regions = db.query(Region).all()
@@ -27,6 +28,7 @@ def read_regions(
 def read_region(
     id_region: int,
     db: SyncDbSessionDep,
+    bool=Depends(check_auth)
 ):
     """ 
     Devuelve una región por su id. 
