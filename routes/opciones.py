@@ -11,17 +11,17 @@ router = APIRouter(prefix="/opciones", tags=["Opciones"])
     "/",
     response_model=list[Opcion],
     summary="Obtener todas las opciones",
-    description="Devuelve un listado de todas las opciones",
 )
 def read_opciones(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las opciones. """
     opciones = db.query(Opcion).all()
     return opciones
 
 
 @router.post(
-    "/", summary="Añade una opcion", status_code=201, description="Crea una opción"
+    "/", summary="Añade una opcion", status_code=201
 )
 def add_opcion(
     db: SyncDbSessionDep,
@@ -31,6 +31,13 @@ def add_opcion(
         }
     ),
 ):
+    """
+    Agrega una opción a la base de datos.
+    Argumentos:
+    - opción (str)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_opcion = opcion.opcion
     if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion)).first():
         raise HTTPException(status_code=409, detail="Opcion ya existe")
@@ -49,12 +56,18 @@ def add_opcion(
 @router.delete(
     "/{id_opcion}",
     summary="Elimina una opción",
-    description="Elimina una opción por su id",
 )
 def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una opción por su id.
+    Argumentos:
+    - id opción (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     opcion = db.query(Opcion).filter(Opcion.id_opcion == id_opcion).first()
     if opcion:
         db.delete(opcion)

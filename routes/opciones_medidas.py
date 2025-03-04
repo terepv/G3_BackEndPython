@@ -11,11 +11,11 @@ router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
     "/",
     response_model=list[OpcionMedidaOut],
     summary="Obtener todas las opciones de medidas",
-    description="Devuelve un listado de todas las opciones de medidas",
 )
 def read_opciones_medidas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las asociaciones de opciones y medidas. """
     opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
 
@@ -24,7 +24,6 @@ def read_opciones_medidas(
     "/",
     summary="Añade una opcion de medida",
     status_code=201,
-    description="Crea una opcion de medida",
 )
 def add_opcion_medida(
     db: SyncDbSessionDep,
@@ -34,6 +33,14 @@ def add_opcion_medida(
         }
     ),
 ):
+    """
+    Agrega una opción de medida a la base de datos.
+    Argumentos:
+    - id opción (int)
+    - id medida (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     opcion = (
         db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
     )
@@ -69,12 +76,18 @@ def add_opcion_medida(
 @router.delete(
     "/{id_opcion_medida}",
     summary="Elimina una opcion de medida",
-    description="Elimina una opcion de medida por su id",
 )
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una relación de opción y medida por su id.
+    Argumentos:
+    - id opción de medida (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     opcion_medida = (
         db.query(OpcionMedida)
         .filter(OpcionMedida.id_opcion_medida == id_opcion_medida)

@@ -11,11 +11,11 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
     "/",
     response_model=list[UsuarioOut],
     summary="Obtener todos los usuarios",
-    description="Devuelve un listado de todos los usuarios",
 )
 def read_users(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los usuarios. """
     users = db.query(Usuario).all()
     return users
 
@@ -24,12 +24,16 @@ def read_users(
     "/{id_usuario}",
     response_model=Usuario,
     summary="Obtener un usuario por su id",
-    description="Devuelve un usuario por su id",
 )
 def read_user(
     id_usuario: int,
     db: SyncDbSessionDep,
 ):
+    """ 
+    Devuelve un usuario por su id.
+    Argumentos: 
+    - id usuario (int)
+    """
     usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
@@ -37,7 +41,7 @@ def read_user(
 
 
 @router.post(
-    "/", summary="Añade un usuario", status_code=201, description="Crea un usuario"
+    "/", summary="Añade un usuario", status_code=201
 )
 def add_organismo(
     db: SyncDbSessionDep,
@@ -47,6 +51,17 @@ def add_organismo(
         }
     ),
 ):
+    """
+    Agrega un usuario.
+    Argumentos:
+    - nombre (str)
+    - apellido (str)
+    - email (str)
+    - usuario activo (bool)
+    - id tipo de usuario (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     if db.query(Usuario).filter(Usuario.email.ilike(usuario.email)).first():
         raise HTTPException(status_code=409, detail="Usuario ya existe")
     if (
@@ -73,12 +88,18 @@ def add_organismo(
 @router.delete(
     "/{id_usuario}",
     summary="Elimina un usuario por su id",
-    description="Elimina un usuario por su id",
 )
 def delete_usuario(
     id_usuario: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un usuario por su id.
+    Argumentos: 
+    - id usuario (int)
+
+    Devuelve mensaje de confirmación.
+    """
     usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
     if usuario:
         db.delete(usuario)

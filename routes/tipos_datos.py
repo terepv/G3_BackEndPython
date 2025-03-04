@@ -9,10 +9,10 @@ router = APIRouter(prefix="/tipos_datos", tags=["Tipos de Datos"])
     "/",
     response_model=list[TipoDato],
     summary="Obtener todos los tipos de datos",
-    description="Devuelve un listado de todos los tipos de datos",
 )
 def read_tipo_datos(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista de todos los tipos de datos. """
     tipo_datos = db.query(TipoDato).all()
     return tipo_datos

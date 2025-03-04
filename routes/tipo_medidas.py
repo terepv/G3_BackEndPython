@@ -11,11 +11,11 @@ router = APIRouter(prefix="/tipo_medidas", tags=["Tipo Medidas"])
     "/",
     response_model=list[TipoMedida],
     summary="Obtener todos los tipos de medidas",
-    description="Devuelve un listado de todos los tipos de medidas",
 )
 def read_tipo_medidas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los tipos de medidas. """
     tipo_medidas = db.query(TipoMedida).all()
     return tipo_medidas
 
@@ -24,12 +24,16 @@ def read_tipo_medidas(
     "/{id_tipo_medida}",
     response_model=TipoMedida,
     summary="Obtener un tipo de medida por su id",
-    description="Devuelve un tipo de medida por su id",
 )
 def read_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
 ):
+    """ 
+    Devuelve un tipo de medida por su id.
+    Argumentos:
+    - id tipo de medida (int)
+    """
     tipo_medida = (
         db.query(TipoMedida).filter(TipoMedida.id_tipo_medida == id_tipo_medida).first()
     )
@@ -44,7 +48,6 @@ def read_tipo_medida(
     "/",
     summary="Añade un tipo de medida",
     status_code=201,
-    description="Crea un tipo de medida",
 )
 def add_tipo_medida(
     db: SyncDbSessionDep,
@@ -54,6 +57,13 @@ def add_tipo_medida(
         }
     ),
 ):
+    """
+    Agrega un tipo de medida a la base de datos.
+    Argumentos:
+    - tipo de medida (str)
+    
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_tipo_medida = tipo_medida.tipo_medida
 
     if (
@@ -81,12 +91,18 @@ def add_tipo_medida(
 @router.delete(
     "/{id_tipo_medida}",
     summary="Elimina un tipo de medida",
-    description="Elimina un tipo de medida por su id",
 )
 def delete_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un tipo de medida por su id.
+    Argumentos:
+    - id tipo de medida (int)
+
+    Devuelve mensaje de confirmación.
+    """
     tipo_medida = (
         db.query(TipoMedida).filter(TipoMedida.id_tipo_medida == id_tipo_medida).first()
     )
