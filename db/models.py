@@ -28,14 +28,16 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     apellido: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(100), nullable=False)
     id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
     tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     
-    def __init__(self, nombre: str, apellido: str, email: str, id_tipo_usuario: int, activo: bool = True):
+    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_tipo_usuario: int, activo: bool = True):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
+        self.password = password
         self.id_tipo_usuario = id_tipo_usuario
         self.activo = activo
 

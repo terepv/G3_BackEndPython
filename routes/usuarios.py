@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from db.models import TipoUsuario, Usuario
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import AsyncDbSessionDep, SyncDbSessionDep, get_user_from_db
 from shared.schemas import UsuarioCreate, UsuarioOut
 from shared.utils import get_example
 
-router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"],
+                   dependencies=[Depends(get_user_from_db)])
 
 
 @router.get(
@@ -13,16 +16,17 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
     summary="Obtener todos los usuarios",
     description="Devuelve un listado de todos los usuarios",
 )
-def read_users(
-    db: SyncDbSessionDep,
+async def read_users(
+    db: AsyncDbSessionDep,
 ):
-    users = db.query(Usuario).all()
+    result = await db.scalars(select(Usuario).options(selectinload(Usuario.tipo_usuario)))
+    users = result.all()
     return users
 
 
 @router.get(
     "/{id_usuario}",
-    response_model=Usuario,
+    response_model=UsuarioOut,
     summary="Obtener un usuario por su id",
     description="Devuelve un usuario por su id",
 )
