@@ -11,11 +11,11 @@ router = APIRouter(prefix="/frecuencias", tags=["Frecuencias"])
     "/",
     response_model=list[Frecuencia],
     summary="Obtener todas las frecuencias",
-    description="Devuelve un listado de todas las frecuencias",
 )
 def read_frecuencias(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las frecuencias. """
     frecuencias = db.query(Frecuencia).all()
     return frecuencias
 
@@ -24,12 +24,16 @@ def read_frecuencias(
     "/{id_frecuencia}",
     response_model=Frecuencia,
     summary="Obtener una frecuencia por su id",
-    description="Devuelve una frecuencia por su id",
 )
 def read_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve una frecuencia por su id.
+    Argumentos:
+    - id frecuencia (int)
+    """
     frecuencia = (
         db.query(Frecuencia).filter(Frecuencia.id_frecuencia == id_frecuencia).first()
     )
@@ -42,7 +46,6 @@ def read_frecuencia(
     "/",
     summary="Añade una frecuencia",
     status_code=201,
-    description="Crea una frecuencia",
 )
 def add_frecuencia(
     db: SyncDbSessionDep,
@@ -52,6 +55,13 @@ def add_frecuencia(
         }
     ),
 ):
+    """
+    Agrega una frecuencia.
+    Argumentos:
+    - frecuencia (str)
+    
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_frecuencia = frecuencia.frecuencia
     if (
         db.query(Frecuencia)
@@ -74,12 +84,18 @@ def add_frecuencia(
 @router.delete(
     "/{id_frecuencia}",
     summary="Elimina una frecuencia",
-    description="Elimina una frecuencia por su id",
 )
 def delete_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una frecuencia por su id.
+    Argumentos:
+    - id frecuencia (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     frecuencia = (
         db.query(Frecuencia).filter(Frecuencia.id_frecuencia == id_frecuencia).first()
     )

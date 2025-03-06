@@ -10,11 +10,11 @@ router = APIRouter(prefix="/comunas", tags=["Comunas"])
     "/",
     response_model=list[ComunaOut],
     summary="Obtener todas las comunas",
-    description="Devuelve un listado de todas las comunas",
 )
 def read_comunas(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las comunas. """
     comunas = db.query(Comuna).join(Region).all()
     return comunas
 
@@ -23,12 +23,16 @@ def read_comunas(
     "/comuna/{id_comuna}",
     response_model=ComunaOut,
     summary="Obtener una comuna por su id",
-    description="Devuelve una comuna por su id",
 )
 def read_comuna(
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve una comuna por su id. 
+    Argumentos: 
+    - id de comuna (int)
+    """
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     if not comuna:
         raise HTTPException(status_code=404, detail="No existe comuna con ese id")

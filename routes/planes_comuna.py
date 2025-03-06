@@ -10,12 +10,12 @@ router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"]
     "/",
     response_model=list[ComunaOut],
     summary="Obtener todas las comunas de un plan",
-    description="Devuelve un listado de todas las comunas de un plan",
 )
 def read_planes_comunas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todas las comunas de un plan. """
     comunas = (
         db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
     )
@@ -26,13 +26,20 @@ def read_planes_comunas(
     "/{id_comuna}",
     summary="Agregar una comuna a un plan",
     status_code=201,
-    description="Añade una comuna a un plan",
 )
 def add_comuna_to_plan(
     id_plan: int,
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Agrega una comuna a un plan.
+    Argumentos:
+    - id_plan (int)
+    - id_comuna (int)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
 
@@ -59,13 +66,20 @@ def add_comuna_to_plan(
 @router.delete(
     "/{id_comuna}",
     summary="Eliminar una comuna de un plan",
-    description="Elimina una comuna de un plan",
 )
 def delete_comuna_from_plan(
     id_plan: int,
     id_comuna: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una comuna de un plan, por su id.
+    Argumentos:
+    - id plan (int)
+    - id comuna (int)
+
+    Devuelve un mensaje de confirmación.
+    """
     if (
         not db.query(PlanComuna)
         .filter(PlanComuna.id_plan == id_plan, PlanComuna.id_comuna == id_comuna)

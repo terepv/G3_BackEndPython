@@ -11,11 +11,11 @@ router = APIRouter(prefix="/organismos_sectoriales", tags=["Organismos Sectorial
     "/",
     response_model=list[OrganismoSectorial],
     summary="Obtener todos los organismos sectoriales",
-    description="Devuelve un listado de todos los organismos sectoriales",
 )
 def read_organismos(
     db: SyncDbSessionDep,
 ):
+    """ Devuelve una lista con todos los organismos sectoriales. """
     organismos = db.query(OrganismoSectorial).all()
     return organismos
 
@@ -24,12 +24,16 @@ def read_organismos(
     "/{id_organismo_sectorial}",
     response_model=OrganismoSectorial,
     summary="Obtener un organismo sectorial por su id",
-    description="Devuelve un organismo sectorial por su id",
 )
 def read_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve un organismo sectorial por su id.
+    Argumentos: 
+    - id organismo sectorial (int)
+    """
     organismo = (
         db.query(OrganismoSectorial)
         .filter(OrganismoSectorial.id_organismo_sectorial == id_organismo_sectorial)
@@ -51,6 +55,13 @@ def add_organismo(
         }
     ),
 ):
+    """
+    Agrega un organismo sectorial a la base de datos.
+    Argumentos:
+    - organismo sectorial (str).
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     nombre_organismo_sectorial = organismo_sectorial.organismo_sectorial
     if (
         db.query(OrganismoSectorial)
@@ -80,12 +91,18 @@ def add_organismo(
 @router.delete(
     "/{id_organismo_sectorial}",
     summary="Elimina un organismo sectorial",
-    description="Elimina un organismo sectorial por su id",
 )
 def delete_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina un organismo sectorial por su id.
+    Argumentos:
+    - id organismo sectorial (int)
+    
+    Devuelve mensaje de confirmación.
+    """
     organismo = (
         db.query(OrganismoSectorial)
         .filter(OrganismoSectorial.id_organismo_sectorial == id_organismo_sectorial)

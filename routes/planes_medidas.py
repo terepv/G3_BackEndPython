@@ -11,12 +11,16 @@ router = APIRouter(prefix="/planes/{id_plan}/medidas", tags=["Planes - Medidas"]
     "/",
     response_model=list[MedidaOut],
     summary="Obtener todas las medidas de un plan",
-    description="Devuelve un listado de todas las medidas de un plan",
 )
 def read_planes_medidas(
     id_plan: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Devuelve una lista con todas las medidas asociadas a un plan.
+    Argumentos: 
+    - id plan (int)
+    """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
 
@@ -28,7 +32,6 @@ def read_planes_medidas(
     "/",
     summary="Agregar una medida a un plan",
     status_code=201,
-    description="Crea una medida en un plan",
 )
 def add_medida(
     db: SyncDbSessionDep,
@@ -39,6 +42,22 @@ def add_medida(
         }
     ),
 ):
+    """
+    Agrega una medida a un plan.
+    Argumentos:
+    - id del plan (int)
+    - nombre corto medida (str)
+    - indicador de la medida (str)
+    - id frecuencia de la medida (int)
+    - id organismo sectorial (int)
+    - id tipo de medida (int)
+    - descripción medio de verificación (str)
+    - id tipo de dato (int)
+    - cron (str)
+    - reporte unico (bool)
+
+    Devuelve mensaje de confirmación con el recurso creado.
+    """
     data = Medida(
         nombre_corto=medida.nombre_corto,
         indicador=medida.indicador,
@@ -94,7 +113,6 @@ def add_medida(
 @router.put(
     "/{id_medida}",
     summary="Actualizar una medida de un plan",
-    description="Actualiza una medida de un plan por su id",
 )
 def update_medida(
     db: SyncDbSessionDep,
@@ -106,6 +124,23 @@ def update_medida(
         }
     ),
 ):
+    """
+    Actualiza una medida de un plan.
+    Argumentos:
+    - id del plan (int) 
+    - id de medida (int)
+    - nombre corto medida (str)
+    - indicador de la medida (str)
+    - id frecuencia de la medida (int)
+    - id organismo sectorial (int)
+    - id tipo de medida (int)
+    - descripción medio de verificación (str)
+    - id tipo de dato (int)
+    - cron (str)
+    - reporte unico (bool)
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+    """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
 
@@ -165,13 +200,20 @@ def update_medida(
 @router.delete(
     "/{id_medida}",
     summary="Elimina una medida de un plan por su id",
-    description="Elimina una medida de un plan por su id",
 )
 def delete_medida(
     id_plan: int,
     id_medida: int,
     db: SyncDbSessionDep,
 ):
+    """
+    Elimina una medida de un plan por su id.
+    Argumentos:
+    - id plan (int)
+    - id medida (int)
+
+    Devuelve mensaje de confirmación.
+    """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
     medida = db.query(Medida).filter(Medida.id_medida == id_medida).first()
