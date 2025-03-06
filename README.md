@@ -68,6 +68,9 @@ DB_USER=postgres
 DB_PASSWORD=
 DB_HOST=localhost
 DB_PORT=5432
+TOKEN_ALGORITHM=HS256
+TOKEN_SECRET_KEY=
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ```
 **Nota:** Asegúrate de modificar los valores según la configuración de tu base de datos.
 
