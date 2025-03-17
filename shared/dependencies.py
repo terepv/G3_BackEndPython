@@ -1,7 +1,6 @@
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
@@ -28,9 +27,13 @@ AsyncDbSessionDep = Annotated[AsyncSession, Depends(get_db_async)]
 
 token_header_security = APIKeyHeader(name="Authorization", auto_error=False)
 
-async def get_user_email_from_token(
+def get_data_from_token(
     token: Annotated[str | None, Depends(token_header_security)],
-) -> str:
+) -> dict:
+    """
+    Recibe un token por Header y devuelve el email del usuario que realiz la peticion.
+    Si el token es invalido o no existe, devuelve un HTTPException con status 401.
+    """
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales invalidas"
@@ -45,19 +48,17 @@ async def get_user_email_from_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalido"
         )
-    return payload["email"]
+    return payload
 
 
-async def get_user_from_db(
-    db: AsyncDbSessionDep,
-    user_email: str = Depends(get_user_email_from_token),
+def get_user_from_token_data(
+    data: dict = Depends(get_data_from_token),
 ) -> UsuarioOut:
-    usuario_exec = await db.execute(
-        select(Usuario).where(Usuario.email == user_email)
-    )
-    usuario_db = usuario_exec.scalar_one_or_none()
-    if not usuario_db:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no existe"
-        )
-    return usuario_db
+    """
+    Recibe el payload del token de acceso y devuelve el usuario que realiza la petición.
+    Si el token es invalido, no existe o no es del tipo adecuado, devuelve un HTTPException con status 401.
+    """
+    if data["type"] != "access":
+        raise HTTPException(status_code=401, detail="El token provisto no es un token de acceso")
+    
+    return UsuarioOut(**data["user"])

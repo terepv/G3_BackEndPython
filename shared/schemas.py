@@ -17,6 +17,7 @@ class UsuarioCreate(BaseModelCustom):
     nombre: str
     apellido: str
     email: str
+    password: str
     activo: bool | None = True
     id_tipo_usuario: int
 

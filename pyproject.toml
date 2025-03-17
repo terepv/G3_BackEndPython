@@ -16,6 +16,7 @@ pytz = "^2024.2"
 python-multipart = "^0.0.20"
 python-jose = { extras = ["cryptography"], version = "^3.4.0" }
 asyncpg = "^0.30.0"
+bcrypt = "^4.3.0"
 
 
 [build-system]
