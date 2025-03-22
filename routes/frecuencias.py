@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import Frecuencia
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import FrecuenciaCreate
 from shared.utils import get_example
 
@@ -14,8 +15,13 @@ router = APIRouter(prefix="/frecuencias", tags=["Frecuencias"])
 )
 def read_frecuencias(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todas las frecuencias. """
+    """
+    Devuelve una lista con todas las frecuencias.
+    
+    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     frecuencias = db.query(Frecuencia).all()
     return frecuencias
 
@@ -28,12 +34,13 @@ def read_frecuencias(
 def read_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una frecuencia por su id.
-    Argumentos:
-    - id frecuencia (int)
-    """
+
+    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    """ 
     frecuencia = (
         db.query(Frecuencia).filter(Frecuencia.id_frecuencia == id_frecuencia).first()
     )
@@ -54,13 +61,17 @@ def add_frecuencia(
             "default": get_example("frecuencia_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
-    Agrega una frecuencia.
+    Agrega una frecuencia a la base de datos.
+
     Argumentos:
-    - frecuencia (str)
-    
+    - Frecuencia (str)
+
     Devuelve mensaje de confirmación con el recurso creado.
+    
+    Requiere permisos de SMA para acceder a este recurso.
     """
     nombre_frecuencia = frecuencia.frecuencia
     if (
@@ -88,13 +99,17 @@ def add_frecuencia(
 def delete_frecuencia(
     id_frecuencia: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Elimina una frecuencia por su id.
+
     Argumentos:
-    - id frecuencia (int)
-    
-    Devuelve mensaje de confirmación.
+    - id_frecuencia: El id de la frecuencia a eliminar.
+
+    Devuelve mensaje de confirmación con el recurso eliminado.
+
+    Requiere permisos de SMA para acceder a este recurso.
     """
     frecuencia = (
         db.query(Frecuencia).filter(Frecuencia.id_frecuencia == id_frecuencia).first()

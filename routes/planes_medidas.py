@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import Frecuencia, Medida, OrganismoSectorial, Plan, TipoDato, TipoMedida
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import MedidaCreate, MedidaOut
 from shared.utils import get_example
 
@@ -15,11 +16,12 @@ router = APIRouter(prefix="/planes/{id_plan}/medidas", tags=["Planes - Medidas"]
 def read_planes_medidas(
     id_plan: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
-    Devuelve una lista con todas las medidas asociadas a un plan.
-    Argumentos: 
-    - id plan (int)
+    Devuelve una lista con todas las medidas de un plan.
+
+    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
     """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
@@ -41,22 +43,27 @@ def add_medida(
             "default": get_example("medida_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Agrega una medida a un plan.
+    
     Argumentos:
     - id del plan (int)
-    - nombre corto medida (str)
+    - nombre corto de la medida (str)
     - indicador de la medida (str)
-    - id frecuencia de la medida (int)
-    - id organismo sectorial (int)
-    - id tipo de medida (int)
-    - descripción medio de verificación (str)
-    - id tipo de dato (int)
+    - fórmula de cálculo (str)
+    - id de la frecuencia (int)
+    - id del organismo sectorial (int)
+    - id del tipo de medida (int)
+    - descripción del medio de verificación (str)
+    - id del tipo de dato (int)
     - cron (str)
     - reporte unico (bool)
-
+    
     Devuelve mensaje de confirmación con el recurso creado.
+    
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     data = Medida(
         nombre_corto=medida.nombre_corto,
@@ -123,23 +130,28 @@ def update_medida(
             "default": get_example("medida_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Actualiza una medida de un plan.
+    
     Argumentos:
-    - id del plan (int) 
-    - id de medida (int)
-    - nombre corto medida (str)
+    - id del plan (int)
+    - id de la medida (int)
+    - nombre corto de la medida (str)
     - indicador de la medida (str)
-    - id frecuencia de la medida (int)
-    - id organismo sectorial (int)
-    - id tipo de medida (int)
-    - descripción medio de verificación (str)
-    - id tipo de dato (int)
+    - fórmula de cálculo (str)
+    - id de la frecuencia (int)
+    - id del organismo sectorial (int)
+    - id del tipo de medida (int)
+    - descripción del medio de verificación (str)
+    - id del tipo de dato (int)
     - cron (str)
     - reporte unico (bool)
-
+    
     Devuelve mensaje de confirmación con el recurso actualizado.
+    
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
@@ -205,14 +217,18 @@ def delete_medida(
     id_plan: int,
     id_medida: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Elimina una medida de un plan por su id.
-    Argumentos:
-    - id plan (int)
-    - id medida (int)
 
-    Devuelve mensaje de confirmación.
+    Argumentos:
+    - id del plan (int)
+    - id de la medida (int)
+
+    Devuelve un mensaje de confirmación con el recurso eliminado.
+
+    Requiere estar autenticado con rol de SMA para acceder a este recurso.
     """
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")

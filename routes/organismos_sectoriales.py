@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import OrganismoSectorial
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import OrganismoSectorialCreate
 from shared.utils import get_example
 
@@ -14,8 +15,13 @@ router = APIRouter(prefix="/organismos_sectoriales", tags=["Organismos Sectorial
 )
 def read_organismos(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todos los organismos sectoriales. """
+    """
+    Devuelve una lista con todos los organismos sectoriales.
+    
+    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     organismos = db.query(OrganismoSectorial).all()
     return organismos
 
@@ -28,11 +34,15 @@ def read_organismos(
 def read_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve un organismo sectorial por su id.
-    Argumentos: 
-    - id organismo sectorial (int)
+
+    Argumentos:
+    - id_organismo_sectorial: El id del organismo sectorial a obtener.
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
     """
     organismo = (
         db.query(OrganismoSectorial)
@@ -54,13 +64,17 @@ def add_organismo(
             "default": get_example("organismo_sectorial_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Agrega un organismo sectorial a la base de datos.
+    
     Argumentos:
-    - organismo sectorial (str).
+    - organismo_sectorial: El nombre del organismo sectorial a agregar.
 
     Devuelve mensaje de confirmación con el recurso creado.
+
+    Requiere permisos de SMA para acceder a este recurso.
     """
     nombre_organismo_sectorial = organismo_sectorial.organismo_sectorial
     if (
@@ -95,13 +109,17 @@ def add_organismo(
 def delete_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
-    Elimina un organismo sectorial por su id.
+    Elimina un organismo sectorial de la base de datos.
+
     Argumentos:
-    - id organismo sectorial (int)
-    
-    Devuelve mensaje de confirmación.
+    - id_organismo_sectorial: El id del organismo sectorial a eliminar.
+
+    Devuelve mensaje de confirmación con el recurso eliminado.
+
+    Requiere permisos de SMA para acceder a este recurso.
     """
     organismo = (
         db.query(OrganismoSectorial)

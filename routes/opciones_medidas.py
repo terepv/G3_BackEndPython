@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import Medida, Opcion, OpcionMedida
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import OpcionMedidaCreate, OpcionMedidaOut
 from shared.utils import get_example
 
@@ -14,8 +15,13 @@ router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 )
 def read_opciones_medidas(
     db: SyncDbSessionDep,
-):
-    """ Devuelve una lista con todas las asociaciones de opciones y medidas. """
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+): 
+    """
+    Devuelve una lista con todas las opciones de medidas.
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    """  
     opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
 
@@ -32,14 +38,18 @@ def add_opcion_medida(
             "default": get_example("opcion_medida_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Agrega una opción de medida a la base de datos.
+    
     Argumentos:
-    - id opción (int)
-    - id medida (int)
+    - id de la opción (int)
+    - id de la medida (int)
 
     Devuelve mensaje de confirmación con el recurso creado.
+
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     opcion = (
         db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
@@ -80,13 +90,12 @@ def add_opcion_medida(
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
-    Elimina una relación de opción y medida por su id.
-    Argumentos:
-    - id opción de medida (int)
-    
-    Devuelve mensaje de confirmación.
+    Elimina una opcion de medida por su id.
+
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     opcion_medida = (
         db.query(OpcionMedida)

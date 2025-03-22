@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from db.models import Comuna, Region
+from shared.enums import RolesEnum
 from shared.schemas import ComunaOut
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
 
 router = APIRouter(prefix="/comunas", tags=["Comunas"])
 
@@ -13,8 +14,13 @@ router = APIRouter(prefix="/comunas", tags=["Comunas"])
 )
 def read_comunas(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todas las comunas. """
+    """
+    Devuelve una lista con todas las comunas.
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     comunas = db.query(Comuna).join(Region).all()
     return comunas
 
@@ -27,11 +33,15 @@ def read_comunas(
 def read_comuna(
     id_comuna: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
-    Devuelve una comuna por su id. 
-    Argumentos: 
-    - id de comuna (int)
+    Devuelve una comuna por su id.
+
+    Argumentos:
+    - id comuna (int)
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
     """
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
     if not comuna:

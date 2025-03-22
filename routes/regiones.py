@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from db.models import Region
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 
 router = APIRouter(prefix="/regiones", tags=["Regiones"])
 
@@ -12,8 +13,13 @@ router = APIRouter(prefix="/regiones", tags=["Regiones"])
 )
 def read_regions(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todas las regiones. """
+    """
+    Devuelve una lista de todas las regiones.
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     regions = db.query(Region).all()
     return regions
 
@@ -26,11 +32,15 @@ def read_regions(
 def read_region(
     id_region: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ 
-    Devuelve una región por su id. 
+    """
+    Devuelve una región por su id.
+
     Argumentos:
     - id región (int)
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
     """
     region = db.query(Region).filter(Region.id_region == id_region).first()
     if not region:

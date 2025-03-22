@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import TipoMedida
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import TipoMedidaCreate
 from shared.utils import get_example
 
@@ -14,8 +15,12 @@ router = APIRouter(prefix="/tipo_medidas", tags=["Tipo Medidas"])
 )
 def read_tipo_medidas(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todos los tipos de medidas. """
+    """Devuelve una lista con todos los tipos de medidas.
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     tipo_medidas = db.query(TipoMedida).all()
     return tipo_medidas
 
@@ -28,11 +33,12 @@ def read_tipo_medidas(
 def read_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ 
+    """
     Devuelve un tipo de medida por su id.
-    Argumentos:
-    - id tipo de medida (int)
+
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
     """
     tipo_medida = (
         db.query(TipoMedida).filter(TipoMedida.id_tipo_medida == id_tipo_medida).first()
@@ -56,13 +62,17 @@ def add_tipo_medida(
             "default": get_example("tipo_medida_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Agrega un tipo de medida a la base de datos.
+
     Argumentos:
-    - tipo de medida (str)
-    
+    - tipo_medida (str)
+
     Devuelve mensaje de confirmación con el recurso creado.
+    
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     nombre_tipo_medida = tipo_medida.tipo_medida
 
@@ -95,13 +105,12 @@ def add_tipo_medida(
 def delete_tipo_medida(
     id_tipo_medida: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Elimina un tipo de medida por su id.
-    Argumentos:
-    - id tipo de medida (int)
 
-    Devuelve mensaje de confirmación.
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     tipo_medida = (
         db.query(TipoMedida).filter(TipoMedida.id_tipo_medida == id_tipo_medida).first()

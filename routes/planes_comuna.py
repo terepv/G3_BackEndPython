@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from db.models import Comuna, Plan, PlanComuna
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import ComunaOut
 
 router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"])
@@ -14,8 +15,16 @@ router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"]
 def read_planes_comunas(
     id_plan: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todas las comunas de un plan. """
+    """
+    Devuelve una lista con todas las comunas asociadas a un plan.
+    
+    Argumentos:
+    - id plan (int)
+    
+    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     comunas = (
         db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
     )
@@ -31,14 +40,18 @@ def add_comuna_to_plan(
     id_plan: int,
     id_comuna: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Agrega una comuna a un plan.
+    
     Argumentos:
-    - id_plan (int)
-    - id_comuna (int)
-
-    Devuelve mensaje de confirmación con el recurso creado.
+    - id plan (int)
+    - id comuna (int)
+    
+    Devuelve un mensaje de confirmación con el recurso creado.
+    
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
     comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
@@ -71,14 +84,18 @@ def delete_comuna_from_plan(
     id_plan: int,
     id_comuna: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
-    Elimina una comuna de un plan, por su id.
+    Elimina una comuna de un plan.
+    
     Argumentos:
-    - id plan (int)
-    - id comuna (int)
+    - id del plan (int)
+    - id de la comuna (int)
 
     Devuelve un mensaje de confirmación.
+
+    Requiere estar autenticado con rol de SMA para acceder a este recurso.
     """
     if (
         not db.query(PlanComuna)

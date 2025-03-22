@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from db.models import Opcion
-from shared.dependencies import SyncDbSessionDep
+from shared.dependencies import RoleChecker, SyncDbSessionDep
+from shared.enums import RolesEnum
 from shared.schemas import OpcionCreate
 from shared.utils import get_example
 
@@ -14,8 +15,13 @@ router = APIRouter(prefix="/opciones", tags=["Opciones"])
 )
 def read_opciones(
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
-    """ Devuelve una lista con todas las opciones. """
+    """
+    Devuelve una lista de todas las opciones.
+
+    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    """
     opciones = db.query(Opcion).all()
     return opciones
 
@@ -30,13 +36,17 @@ def add_opcion(
             "default": get_example("opcion_post"),
         }
     ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
-    Agrega una opción a la base de datos.
+    Agrega una opción.
+
     Argumentos:
-    - opción (str)
+    - nombre de la opción (str)
 
     Devuelve mensaje de confirmación con el recurso creado.
+    
+    Requiere estar autenticado con rol de SMA para acceder a este recurso.
     """
     nombre_opcion = opcion.opcion
     if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion)).first():
@@ -60,13 +70,12 @@ def add_opcion(
 def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
 ):
     """
     Elimina una opción por su id.
-    Argumentos:
-    - id opción (int)
-    
-    Devuelve mensaje de confirmación.
+
+    Requiere ser usuario de SMA para acceder a este recurso.
     """
     opcion = db.query(Opcion).filter(Opcion.id_opcion == id_opcion).first()
     if opcion:

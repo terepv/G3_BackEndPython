@@ -62,3 +62,15 @@ def get_user_from_token_data(
         raise HTTPException(status_code=401, detail="El token provisto no es un token de acceso")
     
     return UsuarioOut(**data["user"])
+
+class RoleChecker:  
+  def __init__(self, allowed_roles):  
+    self.allowed_roles = allowed_roles  
+  
+  def __call__(self, user: Annotated[UsuarioOut, Depends(get_user_from_token_data)]):  
+    if user.tipo_usuario.tipo_usuario in self.allowed_roles:  
+      return True  
+    raise HTTPException(  
+       status_code=status.HTTP_401_UNAUTHORIZED,   
+       detail="No tiene permisos para acceder a este recurso"
+    )  
