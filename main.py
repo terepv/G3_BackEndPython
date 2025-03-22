@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from routes import (
     auth, comunas, frecuencias, opciones, opciones_medidas, organismos_sectoriales, planes, planes_medidas, 
-    regiones, planes_comuna, tipo_medidas, tipos_datos, usuarios
+    regiones, planes_comuna, tipo_medidas, tipo_usuarios, tipos_datos, usuarios
 )
 from shared.utils import get_local_now_datetime
 
@@ -20,6 +20,7 @@ app.include_router(comunas.router)
 app.include_router(planes.router)
 app.include_router(planes_comuna.router)
 app.include_router(planes_medidas.router)
+app.include_router(tipo_usuarios.router)
 app.include_router(usuarios.router)
 app.include_router(organismos_sectoriales.router)
 app.include_router(frecuencias.router)
