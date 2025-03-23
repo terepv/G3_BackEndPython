@@ -92,3 +92,15 @@ class OpcionMedidaOut(BaseModelCustom):
     id_opcion_medida: int
     opcion: Opcion
     medida: MedidaOut
+
+class MedioVerificacionOut(BaseModelCustom):
+    id_reporte: int
+    nombre_archivo: str
+    tamano: int
+
+class ReporteOut(BaseModelCustom):
+    id_reporte: int
+    id_medida: int
+    fecha_registro: datetime
+    medio_verificacion: MedioVerificacionOut
+    usuario_creacion: UsuarioOut

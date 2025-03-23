@@ -164,3 +164,33 @@ class OpcionMedida(Base):
     def __init__(self, id_opcion: int, id_medida: int):
         self.id_opcion = id_opcion
         self.id_medida = id_medida
+
+class Reporte(Base):
+    __tablename__ = "reporte"
+    id_reporte: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_medida: Mapped[int] = mapped_column(Integer, ForeignKey("medida.id_medida"), nullable=False)
+    medida: Mapped[Medida] = relationship(Medida)
+    id_usuario_creacion: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    usuario_creacion: Mapped[Usuario] = relationship(Usuario)
+    fecha_registro: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now())
+
+    def __init__(self, id_medida: int, id_usuario_creacion: int, fecha_registro: datetime | None = None):
+        self.id_medida = id_medida
+        self.id_usuario_creacion = id_usuario_creacion
+        self.fecha_registro = fecha_registro or datetime.now()
+
+class OrganismoSectorialUsuario(Base):
+    __tablename__ = "organismo_sectorial_usuario"
+    id_organismo_sectorial_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=False)
+    id_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    organismo_sectorial: Mapped[OrganismoSectorial] = relationship(OrganismoSectorial)
+    usuario: Mapped[Usuario] = relationship(Usuario)
+
+class MedioVerificacion(Base):
+    __tablename__ = "medio_verificacion"
+    id_reporte: Mapped[int] = mapped_column(Integer, ForeignKey("reporte.id_reporte"), primary_key=True, nullable=False)
+    reporte: Mapped[Reporte] = relationship(Reporte)
+    nombre_archivo: Mapped[str] = mapped_column(String(100), nullable=False)
+    archivo: Mapped[bytes] = mapped_column(String(100), nullable=False)
+    tamano: Mapped[int] = mapped_column(Integer, nullable=False)

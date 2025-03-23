@@ -56,7 +56,7 @@ def read_user(
 @router.post(
     "/", summary="Añade un usuario", status_code=201
 )
-def add_organismo(
+def add_usuario(
     db: SyncDbSessionDep,
     usuario: UsuarioCreate = Body(
         openapi_examples={
