@@ -1,14 +1,22 @@
 from fastapi import FastAPI
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 from routes import (
     auth, comunas, frecuencias, opciones, opciones_medidas, organismos_sectoriales, planes, planes_medidas, 
     regiones, planes_comuna, tipo_medidas, tipo_usuarios, tipos_datos, usuarios
 )
 from shared.utils import get_local_now_datetime
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["5/minute"])
 app = FastAPI(
     title="REST API REPORTES PPDA",
     description=f"Last deployment: {get_local_now_datetime()}",
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 @app.get("/")
 def root():
