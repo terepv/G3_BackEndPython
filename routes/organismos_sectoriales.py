@@ -1,40 +1,42 @@
+from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import OrganismoSectorial
-from shared.dependencies import RoleChecker, SyncDbSessionDep
+from db.models import OrganismoSectorialResponse
+from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
-from shared.schemas import OrganismoSectorialCreate
-from shared.utils import get_example
+from shared.schemas import OrganismoSectorialCreate, UsuarioOut
+from shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/organismos_sectoriales", tags=["Organismos Sectoriales"])
 
 
 @router.get(
     "/",
-    response_model=list[OrganismoSectorial],
+    response_model=list[OrganismoSectorialResponse],
+    response_model_exclude_none=True,
     summary="Obtener todos los organismos sectoriales",
 )
 def read_organismos(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una lista con todos los organismos sectoriales.
     
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    organismos = db.query(OrganismoSectorial).all()
+    organismos = db.query(OrganismoSectorialResponse).filter(OrganismoSectorialResponse.eliminado_por == None).all()
     return organismos
 
 
 @router.get(
     "/{id_organismo_sectorial}",
-    response_model=OrganismoSectorial,
+    response_model=OrganismoSectorialResponse,
     summary="Obtener un organismo sectorial por su id",
 )
 def read_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve un organismo sectorial por su id.
@@ -42,11 +44,11 @@ def read_organismo(
     Argumentos:
     - id_organismo_sectorial: El id del organismo sectorial a obtener.
 
-    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
     organismo = (
-        db.query(OrganismoSectorial)
-        .filter(OrganismoSectorial.id_organismo_sectorial == id_organismo_sectorial)
+        db.query(OrganismoSectorialResponse)
+        .filter(OrganismoSectorialResponse.id_organismo_sectorial == id_organismo_sectorial, OrganismoSectorialResponse.eliminado_por == None)
         .first()
     )
     if not organismo:
@@ -56,15 +58,21 @@ def read_organismo(
     return organismo
 
 
-@router.post("/", summary="Añade un organismo sectorial", status_code=201)
+@router.post(
+        "/", 
+        summary="Añade un organismo sectorial", 
+        status_code=201,
+        response_model_exclude_none=True,
+)
 def add_organismo(
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     organismo_sectorial: OrganismoSectorialCreate = Body(
         openapi_examples={
             "default": get_example("organismo_sectorial_post"),
         }
     ),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Agrega un organismo sectorial a la base de datos.
@@ -74,13 +82,13 @@ def add_organismo(
 
     Devuelve mensaje de confirmación con el recurso creado.
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     nombre_organismo_sectorial = organismo_sectorial.organismo_sectorial
     if (
-        db.query(OrganismoSectorial)
+        db.query(OrganismoSectorialResponse)
         .filter(
-            OrganismoSectorial.organismo_sectorial.ilike(nombre_organismo_sectorial)
+            OrganismoSectorialResponse.organismo_sectorial.ilike(nombre_organismo_sectorial),
         )
         .first()
     ):
@@ -95,12 +103,55 @@ def add_organismo(
             status_code=400, detail="Nombre de organismo sectorial muy largo"
         )
 
-    organismo = OrganismoSectorial(organismo_sectorial=nombre_organismo_sectorial)
+    organismo = OrganismoSectorialResponse(
+        organismo_sectorial=nombre_organismo_sectorial,
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user.email,
+    )
     db.add(organismo)
     db.commit()
     db.refresh(organismo)
     return {"message": "Se creó organismo sectorial", "organismo_sectorial": organismo}
 
+
+@router.put(
+    "/{id_organismo_sectorial}",
+    summary="Actualiza un plan por su id",
+    response_model_exclude_none=True,
+)
+def update_organismo_sectorial(
+    id_organismo_sectorial: int,
+    db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    organismo_sectorial: OrganismoSectorialCreate = Body(
+        openapi_examples={
+            "default": get_example("organismo_sectorial_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Actualiza un organismo sectorial por su id.
+
+    Argumentos:
+    - organismo_sectorial: El nombre del organismo sectorial a agregar.
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+    """
+    data = db.query(OrganismoSectorialResponse).filter(OrganismoSectorialResponse.id_organismo_sectorial == id_organismo_sectorial, OrganismoSectorialResponse.eliminado_por == None).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="No existe organismo sectorial con ese id")
+    if db.query(OrganismoSectorialResponse).filter(OrganismoSectorialResponse.id_organismo_sectorial != id_organismo_sectorial, OrganismoSectorialResponse.organismo_sectorial.ilike(organismo_sectorial.organismo_sectorial)).first():
+        raise HTTPException(status_code=409, detail="Organismo sectorial ya existe")
+    data.organismo_sectorial = organismo_sectorial.organismo_sectorial
+    data.fecha_actualizacion = get_local_now_datetime()
+    data.actualizado_por = user.email
+    db.commit()
+    return (
+        {"message": "Se actualizó organismo sectorial", "organismo_sectorial": data}
+    )
 
 @router.delete(
     "/{id_organismo_sectorial}",
@@ -109,7 +160,8 @@ def add_organismo(
 def delete_organismo(
     id_organismo_sectorial: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina un organismo sectorial de la base de datos.
@@ -121,13 +173,9 @@ def delete_organismo(
 
     Requiere permisos de SMA para acceder a este recurso.
     """
-    organismo = (
-        db.query(OrganismoSectorial)
-        .filter(OrganismoSectorial.id_organismo_sectorial == id_organismo_sectorial)
-        .first()
-    )
+    organismo = db.query(OrganismoSectorialResponse).filter(OrganismoSectorialResponse.id_organismo_sectorial == id_organismo_sectorial, OrganismoSectorialResponse.eliminado_por == None).first()
     if organismo:
-        db.delete(organismo)
+        organismo.fecha_eliminacion = get_local_now_datetime()
+        organismo.eliminado_por = user.email
         db.commit()
-
     return {"message": "Se eliminó organismo sectorial"}

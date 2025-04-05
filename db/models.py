@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -8,19 +8,61 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Integer,
     String,
     ForeignKey,
+    TIMESTAMP,
+    text
 )
+from shared.utils import get_local_now_datetime
 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass
 
-class TipoUsuario(Base):
-    __tablename__ = "tipo_usuario"
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tipo_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
+class AuditMixin(MappedAsDataclass):
+    fecha_creacion: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        nullable=False,
+        default_factory=get_local_now_datetime,
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        repr=False,
+    )
+    creado_por: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        repr=False,
+    )
+    fecha_actualizacion: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        repr=False,
+    )
+    actualizado_por: Mapped[str | None] = mapped_column(
+        String(255),
+        init=False,
+        repr=False,
+    )
+    fecha_eliminacion: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        repr=False,
+    )
+    eliminado_por: Mapped[str | None] = mapped_column(
+        String(255),
+        init=False,
+        repr=False,
+    )
+
+    class Config:
+        orm_mode = True
+
+class Rol(Base):
+    __tablename__ = "rol"
+    id_rol: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    rol: Mapped[str] = mapped_column(String(50), nullable=False)
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -29,22 +71,29 @@ class Usuario(Base):
     apellido: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(100), nullable=False)
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
-    tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
+    id_rol: Mapped[int] = mapped_column(Integer, ForeignKey("rol.id_rol"), nullable=False)
+    rol: Mapped[Rol] = relationship(Rol)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     
-    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_tipo_usuario: int, activo: bool = True):
+    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_rol: int, activo: bool = True):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
         self.password = password
-        self.id_tipo_usuario = id_tipo_usuario
+        self.id_rol = id_rol
         self.activo = activo
 
 class Region(Base):
     __tablename__ = "region"
     id_region: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     region: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+
+    class Config:
+        orm_mode = True
+
+class RegionResponse(Region, AuditMixin):
+    pass
+    
 
 class Comuna(Base):
     __tablename__ = "comuna"
@@ -53,20 +102,32 @@ class Comuna(Base):
     id_region: Mapped[int] = mapped_column(Integer, ForeignKey("region.id_region"), nullable=False)
     region: Mapped[Region] = relationship(Region)
 
+class ComunaResponse(Comuna, AuditMixin):
+    pass
+
 class Plan(Base):
     __tablename__ = "plan"
     id_plan: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[str] = mapped_column(String(100), nullable=False)
-    id_usuario_creacion: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
-    usuario_creacion: Mapped[Usuario] = relationship(Usuario)
-    fecha_publicacion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now())
+    fecha_publicacion: Mapped[date] = mapped_column(Date, nullable=False, default=datetime.now())
 
-    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None, id_usuario_creacion: int = None):
+    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None):
         self.nombre = nombre
         self.descripcion = descripcion
         self.fecha_publicacion = fecha_publicacion or datetime.now()
-        self.id_usuario_creacion = id_usuario_creacion or 1
+
+    class Config:
+        orm_mode = True
+
+class PlanResponse(Plan, AuditMixin):
+    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.nombre = nombre
+        self.descripcion = descripcion
+        self.fecha_publicacion = fecha_publicacion or datetime.now()
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+    pass
 
 class PlanComuna(Base):
     __tablename__ = "plan_comuna"
@@ -80,6 +141,13 @@ class PlanComuna(Base):
         self.id_plan = id_plan
         self.id_comuna = id_comuna
 
+class PlanComunaResponse(PlanComuna, AuditMixin):
+    def __init__(self, id_plan: int, id_comuna: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_plan = id_plan
+        self.id_comuna = id_comuna
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class OrganismoSectorial(Base):
     __tablename__ = "organismo_sectorial"
     id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -87,6 +155,12 @@ class OrganismoSectorial(Base):
 
     def __init__(self, organismo_sectorial: str):
         self.organismo_sectorial = organismo_sectorial
+
+class OrganismoSectorialResponse(OrganismoSectorial, AuditMixin):
+    def __init__(self, organismo_sectorial: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.organismo_sectorial = organismo_sectorial
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Frecuencia(Base):
     __tablename__ = "frecuencia"

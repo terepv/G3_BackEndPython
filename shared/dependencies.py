@@ -68,7 +68,7 @@ class RoleChecker:
     self.allowed_roles = allowed_roles  
   
   def __call__(self, user: Annotated[UsuarioOut, Depends(get_user_from_token_data)]):  
-    if user.tipo_usuario.tipo_usuario in self.allowed_roles:  
+    if user.rol.rol in self.allowed_roles:  
       return True  
     raise HTTPException(  
        status_code=status.HTTP_401_UNAUTHORIZED,   

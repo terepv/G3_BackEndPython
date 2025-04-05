@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from db.models import Comuna, Region
+from db.models import ComunaResponse, Region
 from shared.enums import RolesEnum
 from shared.schemas import ComunaOut
 from shared.dependencies import RoleChecker, SyncDbSessionDep
@@ -10,30 +10,32 @@ router = APIRouter(prefix="/comunas", tags=["Comunas"])
 @router.get(
     "/",
     response_model=list[ComunaOut],
+    response_model_exclude_none=True,
     summary="Obtener todas las comunas",
 )
 def read_comunas(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una lista con todas las comunas.
 
-    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    comunas = db.query(Comuna).join(Region).all()
+    comunas = db.query(ComunaResponse).filter(ComunaResponse.eliminado_por == None).join(Region).all()
     return comunas
 
 
 @router.get(
     "/comuna/{id_comuna}",
     response_model=ComunaOut,
+    response_model_exclude_none=True,
     summary="Obtener una comuna por su id",
 )
 def read_comuna(
     id_comuna: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una comuna por su id.
@@ -41,9 +43,9 @@ def read_comuna(
     Argumentos:
     - id comuna (int)
 
-    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    comuna = db.query(Comuna).filter(Comuna.id_comuna == id_comuna).first()
+    comuna = db.query(ComunaResponse).filter(ComunaResponse.id_comuna == id_comuna, ComunaResponse.eliminado_por == None).first()
     if not comuna:
         raise HTTPException(status_code=404, detail="No existe comuna con ese id")
     return comuna

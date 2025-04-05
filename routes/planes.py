@@ -1,39 +1,47 @@
+from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import Plan
-from shared.dependencies import RoleChecker, SyncDbSessionDep
+from db.models import Plan, PlanResponse
+from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
-from shared.schemas import PlanCreate
-from shared.utils import get_example
+from shared.schemas import PlanCreate, UsuarioOut
+from shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/planes", tags=["Planes"])
 
 
 @router.get(
     "/",
-    response_model=list[Plan],
+    response_model=list[PlanResponse],
+    response_model_exclude_none=True,
     summary="Obtener todos los planes",
 )
 def read_planes(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """ Devuelve una lista de todos los planes.
     
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    planes = db.query(Plan).all()
+    planes = db.query(PlanResponse).filter(PlanResponse.eliminado_por == None).all()
     return planes
 
 
-@router.post("/", summary="Añade un plan", status_code=201)
+@router.post(
+    "/", 
+    summary="Añade un plan", 
+    status_code=201,
+    response_model_exclude_none=True,
+)
 def add_plan(
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     plan: PlanCreate = Body(
         openapi_examples={
             "default": get_example("plan_post"),
         }
     ),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Agrega un plan.
@@ -44,18 +52,19 @@ def add_plan(
     - fecha de publicación del plan (datetime)
     - id usuario (int)
 
-    Devuelve mensaje de confirmación con el recurso creado.
+    Devuelve un mensaje de confirmación con el recurso actualizado.
 
-    Requiere estar autenticado con rol de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     if db.query(Plan).filter(Plan.nombre.ilike(plan.nombre)).first():
         raise HTTPException(status_code=409, detail="Plan ya existe")
 
-    data = Plan(
+    data = PlanResponse(
         nombre=plan.nombre,
         descripcion=plan.descripcion,
         fecha_publicacion=plan.fecha_publicacion,
-        id_usuario_creacion=1,
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user.email,
     )
 
     db.add(data)
@@ -63,6 +72,49 @@ def add_plan(
     db.refresh(data)
 
     return {"message": "Se creó plan", "plan": data}
+
+@router.put(
+    "/{id_plan}",
+    summary="Actualiza un plan por su id",
+    response_model_exclude_none=True,
+)
+def update_plan(
+    id_plan: int,
+    db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    plan: PlanCreate = Body(
+        openapi_examples={
+            "default": get_example("plan_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Actualiza un plan por su id.
+
+    Argumentos:
+    - nombre del plan (str)
+    - descripción del plan (str)
+    - fecha de publicación del plan (datetime)
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+    """
+    data = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="No existe plan con ese id")
+    if db.query(PlanResponse).filter(PlanResponse.id_plan != id_plan, PlanResponse.nombre.ilike(plan.nombre)).first():
+        raise HTTPException(status_code=409, detail="Plan ya existe")
+    data.nombre = plan.nombre
+    data.descripcion = plan.descripcion
+    data.fecha_publicacion = plan.fecha_publicacion
+    data.fecha_actualizacion = get_local_now_datetime()
+    data.actualizado_por = user.email
+    db.commit()
+    return (
+        {"message": "Se actualizó plan", "plan": data}
+    )
 
 
 @router.delete(
@@ -72,7 +124,8 @@ def add_plan(
 def delete_plan(
     id_plan: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina un plan por su id.
@@ -82,31 +135,33 @@ def delete_plan(
 
     Devuelve mensaje de confirmación con el recurso eliminado.
 
-    Requiere estar autenticado con rol de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
-    plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
+    plan = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
     if plan:
-        db.delete(plan)
+        plan.fecha_eliminacion = get_local_now_datetime()
+        plan.eliminado_por = user.email
         db.commit()
     return {"message": "Se eliminó plan"}
 
 
 @router.get(
     "/{id_plan}",
-    response_model=Plan,
+    response_model=PlanResponse,
+    response_model_exclude_none=True,
     summary="Obtener un plan por su id",
 )
 def read_plan(
     id_plan: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve un plan por su id.
 
-    Requiere estar autenticado con rol de SMA o Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    plan = db.query(Plan).filter(Plan.id_plan == id_plan).first()
+    plan = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
     if not plan:
         raise HTTPException(status_code=404, detail="No existe plan con ese id")
     return plan

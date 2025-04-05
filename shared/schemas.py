@@ -9,9 +9,17 @@ class BaseModelCustom(BaseModel):
         extra="ignore",
     )
 
-class TipoUsuario(BaseModelCustom):
-    id_tipo_usuario: int
-    tipo_usuario: str
+class AuditMixin(BaseModel):
+    fecha_creacion: datetime | None = None
+    creado_por: str | None = None
+    fecha_actualizacion: datetime | None = None
+    actualizado_por: str | None = None
+    fecha_eliminacion: datetime | None = None
+    eliminado_por: str | None = None
+
+class Rol(BaseModelCustom):
+    id_rol: int
+    rol: str
 
 class UsuarioCreate(BaseModelCustom):
     nombre: str
@@ -19,23 +27,29 @@ class UsuarioCreate(BaseModelCustom):
     email: str
     password: str
     activo: bool | None = True
-    id_tipo_usuario: int
+    id_rol: int
 
 class UsuarioOut(BaseModelCustom):
     id_usuario: int
     nombre: str
     apellido: str
     email: str
-    tipo_usuario: TipoUsuario
+    rol: Rol
 
 class Region(BaseModelCustom):
     id_region: int
     region: str
 
-class ComunaOut(BaseModelCustom):
+class ComunaOut(BaseModelCustom, AuditMixin):
     id_comuna: int
     comuna: str
     region: Region
+
+class PlanComunaOut(BaseModelCustom, AuditMixin):
+    id_plan_comuna: int
+    id_plan: int
+    comuna: ComunaOut
+
 
 class PlanCreate(BaseModelCustom):
     nombre: str = Field(..., min_length=3, max_length=100)

@@ -1,5 +1,6 @@
 from enum import StrEnum
 
 class RolesEnum(StrEnum):
-    SMA = "SMA"
+    ADMIN = "Administrador"
+    FISCALIZADOR = "Fiscalizador"
     ORGANISMO_SECTORIAL = "Organismo Sectorial"

@@ -33,9 +33,9 @@ def get_token(
             "nombre": user.nombre,
             "apellido": user.apellido,
             "email": user.email,
-            "tipo_usuario": {
-                "id_tipo_usuario": user.id_tipo_usuario,
-                "tipo_usuario": user.tipo_usuario.tipo_usuario,
+            "rol": {
+                "id_rol": user.id_rol,
+                "rol": user.rol.rol,
             },
         }
     }
