@@ -76,7 +76,7 @@ def add_region(
     Crea una nueva región.
 
     Argumentos:
-    - nombre del plan (str)
+    - nombre de la región (str)
 
     Devuelve un mensaje de confirmación con el recurso actualizado.
     Requiere rol de Administrador.
@@ -96,3 +96,73 @@ def add_region(
     db.refresh(data)
 
     return {"message": "Se creó una región", "región": data}
+
+@router.put(
+    "/{id_region}",
+    summary="Actualiza una región por su id",
+    response_model_exclude_none=True,
+)
+def update_region(
+    id_region: int,
+    db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    region: RegionCreate = Body(
+        openapi_examples={
+            "default": get_example("plan_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Actualiza una región por su id.
+
+    Argumentos:
+    - nombre de la región (str)
+    - fecha de creación de la región (datetime)
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+    """
+
+    data = db.query(RegionResponse).filter(RegionResponse.id_region == id_region, RegionResponse.eliminado_por == None).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="No existe región con ese id")
+    if db.query(RegionResponse).filter(RegionResponse.id_region != id_region, RegionResponse.nombre.ilike(region.nombre)).first():
+        raise HTTPException(status_code=409, detail="Region ya existe")
+    data.nombre = region.nombre
+    data.fecha_creacion = region.fecha_creacion
+    data.fecha_actualizacion = get_local_now_datetime()
+    data.actualizado_por = user.email
+    db.commit()
+    return (
+        {"message": "Se actualizó región", "región": data}
+    )
+
+
+@router.delete(
+    "/{id_region}",
+    summary="Elimina una región por su id",
+)
+def delete_region(
+    id_region: int,
+    db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Elimina una región por su id.
+
+    Argumentos:
+    - id de la región (int)
+
+    Devuelve mensaje de confirmación con el recurso eliminado.
+
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+    """
+    region = db.query(RegionResponse).filter(RegionResponse.id_plan == id_region, RegionResponse.eliminado_por == None).first()
+    if region:
+        region.fecha_eliminacion = get_local_now_datetime()
+        region.eliminado_por = user.email
+        db.commit()
+    return {"message": "Se eliminó región"}
