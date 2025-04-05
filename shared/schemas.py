@@ -36,6 +36,11 @@ class UsuarioOut(BaseModelCustom):
     email: str
     rol: Rol
 
+class RegionCreate(BaseModelCustom):
+    nombre: str = Field(..., min_length=3, max_length=200)
+    fecha_creacion: datetime
+
+
 class Region(BaseModelCustom):
     id_region: int
     region: str
