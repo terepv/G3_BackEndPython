@@ -42,6 +42,21 @@ app.include_router(organismos_sectoriales.router)
 # app.include_router(opciones_medidas.router)
 # app.include_router(reportes.router)
 
+def run_uvicorn():
+    import argparse
+    import uvicorn
+
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--port", type=int, default=8000)
+    args = argparser.parse_args()
+
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=args.port,
+        reload=True,
+    )
 
 
-
+if __name__ == "__main__":
+    run_uvicorn()

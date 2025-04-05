@@ -103,7 +103,11 @@ class Comuna(Base):
     region: Mapped[Region] = relationship(Region)
 
 class ComunaResponse(Comuna, AuditMixin):
-    pass
+    def __init__(self, comuna: str, id_region: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.comuna = comuna
+        self.id_region = id_region
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Plan(Base):
     __tablename__ = "plan"

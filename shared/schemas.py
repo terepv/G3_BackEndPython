@@ -40,6 +40,10 @@ class Region(BaseModelCustom):
     id_region: int
     region: str
 
+class ComunaCreate(BaseModelCustom):
+    comuna: str = Field(..., min_length=3, max_length=100)
+    id_region: int = Field(..., gt=0)
+
 class ComunaOut(BaseModelCustom, AuditMixin):
     id_comuna: int
     comuna: str
