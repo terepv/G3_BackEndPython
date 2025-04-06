@@ -149,7 +149,6 @@ def update_comuna(
 @router.delete(
     "/{id_comuna}",
     summary="Elimina una comuna por su id",
-    status_code=204,
 )
 def delete_comuna(
     id_comuna: int,

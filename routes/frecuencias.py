@@ -149,7 +149,7 @@ def update_frecuencia(
 @router.delete(
     "/{id_frecuencia}",
     summary="Elimina una frecuencia por su id",
-    status_code=204,
+    status_code=200,
 )
 def delete_frecuencia(
     id_frecuencia: int,

@@ -141,7 +141,6 @@ def update_region(
 @router.delete(
     "/{id_region}",
     summary="Elimina una región por su id",
-    status_code=204,
 )
 def delete_region(
     id_region: int,

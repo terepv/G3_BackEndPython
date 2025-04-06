@@ -132,7 +132,6 @@ class ReporteOut(BaseModelCustom):
 
 class TipoDatoCreate(BaseModelCustom):
     tipo_dato: str = Field(..., min_length=3, max_length=200)
-    id_tipo_dato: int
 
 class TipoDatoOut(BaseModelCustom, AuditMixin):
     id_tipo_dato: int

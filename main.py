@@ -8,7 +8,9 @@ from routes import (
     # , frecuencias, opciones, opciones_medidas
     , organismos_sectoriales, planes, planes_medidas
     , regiones, planes_comuna, roles, tipo_medidas, usuarios
-    # , reportes, tipo_medidas, tipo_usuarios, tipos_datos, usuarios
+    # , reportes, tipo_medidas, tipo_usuarios
+    , tipos_datos
+    # , usuarios
 )
 from shared.utils import get_local_now_datetime
 
@@ -36,7 +38,7 @@ app.include_router(usuarios.router)
 app.include_router(organismos_sectoriales.router)
 # app.include_router(frecuencias.router)
 app.include_router(tipo_medidas.router)
-# app.include_router(tipos_datos.router)
+app.include_router(tipos_datos.router)
 # app.include_router(opciones.router)
 # app.include_router(opciones_medidas.router)
 # app.include_router(reportes.router)
