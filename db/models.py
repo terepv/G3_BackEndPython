@@ -101,6 +101,14 @@ class Usuario(Base):
         self.activo = activo
         self.id_organismo_sectorial = id_organismo_sectorial
 
+class UsuarioResponse(Usuario, AuditMixin):
+    def __init__(self, nombre: str, apellido: str, email:str, id_rol:int, fecha_creacion: datetime | None = None):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.email = email
+        self.id_rol = id_rol
+        self.fecha_creacion = fecha_creacion
+
 class Region(Base):
     __tablename__ = "region"
     id_region: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
