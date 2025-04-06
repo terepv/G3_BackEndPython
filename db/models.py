@@ -197,6 +197,12 @@ class TipoDato(Base):
     def __init__(self, tipo_dato: str):
         self.tipo_dato = tipo_dato
 
+class TipoDatoResponse(TipoDato, AuditMixin):
+    def __init__(self, tipo_dato: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.tipo_dato = tipo_dato
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class Opcion(Base):
     __tablename__ = "opcion"
     id_opcion: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
