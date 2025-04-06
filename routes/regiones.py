@@ -55,7 +55,6 @@ def read_region(
 
 @router.post(
     "/",
-    response_model=RegionResponse,
     status_code=201, 
     response_model_exclude_none=True,
     summary="Crear una nueva región",
