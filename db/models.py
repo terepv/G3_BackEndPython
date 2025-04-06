@@ -181,6 +181,12 @@ class Frecuencia(Base):
     def __init__(self, frecuencia: str):
         self.frecuencia = frecuencia
 
+class FrecuenciaResponse(Frecuencia, AuditMixin):
+    def __init__(self, frecuencia: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.frecuencia = frecuencia
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class TipoMedida(Base):
     __tablename__ = "tipo_medida"
     id_tipo_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
