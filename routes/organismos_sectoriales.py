@@ -169,9 +169,9 @@ def delete_organismo(
     Argumentos:
     - id_organismo_sectorial: El id del organismo sectorial a eliminar.
 
-    Devuelve mensaje de confirmación con el recurso eliminado.
+    Devuelve mensaje de confirmación.
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     organismo = db.query(OrganismoSectorialResponse).filter(OrganismoSectorialResponse.id_organismo_sectorial == id_organismo_sectorial, OrganismoSectorialResponse.eliminado_por == None).first()
     if organismo:
