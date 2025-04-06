@@ -104,7 +104,7 @@ def add_comuna(
     status_code=201,
     response_model_exclude_none=True,
 )
-def add_comuna(
+def update_comuna(
     id_comuna: int,
     db: SyncDbSessionDep,
     user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
@@ -118,7 +118,8 @@ def add_comuna(
     """
     Actualiza una comuna por su id.
     
-    Argumentos:
+    Argumentos
+    - id de la comuna (int)
     - nombre de la comuna (str)
     - id_region (int)
 
@@ -127,8 +128,8 @@ def add_comuna(
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
 
-    comuna = db.query(ComunaResponse).filter(ComunaResponse.id_comuna == id_comuna, ComunaResponse.eliminado_por == None).first()
-    if not comuna:
+    data = db.query(ComunaResponse).filter(ComunaResponse.id_comuna == id_comuna, ComunaResponse.eliminado_por == None).first()
+    if not data:
         raise HTTPException(status_code=404, detail="No existe comuna con ese id")
 
     if db.query(ComunaResponse).filter(ComunaResponse.comuna.ilike(comuna.comuna), ComunaResponse.id_comuna != id_comuna).first():
@@ -137,10 +138,10 @@ def add_comuna(
     if not db.query(Region).filter(Region.id_region == comuna.id_region).first():
         raise HTTPException(status_code=404, detail="No existe región con ese id")
 
-    comuna.fecha_actualizacion = get_local_now_datetime()
-    comuna.comuna = comuna.comuna
-    comuna.id_region = comuna.id_region
-    comuna.actualizado_por = user.email
+    data.fecha_actualizacion = get_local_now_datetime()
+    data.comuna = comuna.comuna
+    data.id_region = comuna.id_region
+    data.actualizado_por = user.email
     db.commit()
 
     return {"message": "Se actualizó comuna", "comuna": comuna}
@@ -161,6 +162,8 @@ def delete_comuna(
 
     Argumentos:
     - id comuna (int)
+
+    Devuelve mensaje de confirmación.
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
