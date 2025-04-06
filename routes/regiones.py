@@ -82,11 +82,11 @@ def add_region(
     Requiere rol de Administrador.
     """
 
-    if db.query(Region).filter(Region.nombre.ilike(region.nombre)).first():
+    if db.query(Region).filter(Region.region.ilike(region.region)).first():
         raise HTTPException(status_code=409, detail="Región ya existe")
 
     data = RegionResponse(
-        region=region.nombre,
+        region=region.region,
         fecha_creacion=get_local_now_datetime(),
         creado_por=user.email,
     )

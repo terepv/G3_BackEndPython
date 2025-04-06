@@ -110,11 +110,10 @@ class Region(Base):
         orm_mode = True
 
 class RegionResponse(Region, AuditMixin):
-    def __init__(self, nombre: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
-        self.nombre = nombre
+    def __init__(self, region: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.region = region
         self.fecha_creacion = fecha_creacion
         self.creado_por = creado_por
-    pass
     
 
 class Comuna(Base):
