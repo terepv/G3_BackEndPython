@@ -1,9 +1,9 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from db.models import Comuna, Plan, PlanComunaResponse
+from db.models import Comuna, MedidaResponse, Plan, PlanComunaResponse, PlanResponse
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
-from shared.schemas import PlanComunaOut, UsuarioOut
+from shared.schemas import UsuarioOut
 from shared.utils import get_local_now_datetime
 
 router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"])
@@ -11,13 +11,14 @@ router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"]
 
 @router.get(
     "/",
-    response_model=list[PlanComunaOut],
+    response_model=list[PlanComunaResponse],
     response_model_exclude_none=True,
     summary="Obtener todas las comunas de un plan",
 )
 def read_planes_comunas(
     id_plan: int,
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
@@ -28,10 +29,21 @@ def read_planes_comunas(
     
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    # comunas = (
-    #     db.query(Comuna).join(PlanComuna).filter(PlanComuna.id_plan == id_plan).all()
-    # )
-    plan_comunas = db.query(PlanComunaResponse).filter(PlanComunaResponse.id_plan == id_plan, PlanComunaResponse.eliminado_por == None).all()
+    if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
+        plan_comunas = (
+            db.query(PlanComunaResponse)
+            .join(PlanResponse, PlanResponse.id_plan == PlanComunaResponse.id_plan)
+            .join(MedidaResponse, MedidaResponse.id_plan == PlanResponse.id_plan)
+            .filter(
+                PlanResponse.eliminado_por == None,
+                MedidaResponse.eliminado_por == None,
+                PlanComunaResponse.eliminado_por == None,
+                MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+            )
+            .all()
+        )
+    else:
+        plan_comunas = db.query(PlanComunaResponse).filter(PlanComunaResponse.id_plan == id_plan, PlanComunaResponse.eliminado_por == None).all()
     return plan_comunas
 
 
@@ -66,14 +78,13 @@ def add_comuna_to_plan(
         raise HTTPException(status_code=404, detail="El plan no existe")
     if not comuna:
         raise HTTPException(status_code=404, detail="La comuna no existe")
-
-    db_plan_comuna = db.query(PlanComunaResponse).filter(PlanComunaResponse.id_plan == id_plan, PlanComunaResponse.id_comuna == id_comuna).first()
-    if db_plan_comuna:
-        if db_plan_comuna.eliminado_por is not None:
-            db.delete(db_plan_comuna)
-            db.commit()
-        else:
-            raise HTTPException(status_code=409, detail="La comuna ya existe en el plan")
+    
+    if db.query(PlanComunaResponse).filter(
+        PlanComunaResponse.id_plan == id_plan, 
+        PlanComunaResponse.id_comuna == id_comuna, 
+        PlanComunaResponse.eliminado_por == None
+    ).first():
+        raise HTTPException(status_code=409, detail="La comuna ya está asociada al plan")
 
     plan_comuna = PlanComunaResponse(id_plan=id_plan, id_comuna=id_comuna, creado_por=user.email, fecha_creacion=get_local_now_datetime())
     db.add(plan_comuna)
@@ -84,12 +95,12 @@ def add_comuna_to_plan(
 
 
 @router.delete(
-    "/{id_comuna}",
+    "/{id_plan_comuna}",
     summary="Eliminar una comuna de un plan",
 )
 def delete_comuna_from_plan(
     id_plan: int,
-    id_comuna: int,
+    id_plan_comuna: int,
     db: SyncDbSessionDep,
     user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
@@ -99,14 +110,17 @@ def delete_comuna_from_plan(
     
     Argumentos:
     - id del plan (int)
-    - id de la comuna (int)
+    - id del plan comuna (int)
 
     Devuelve un mensaje de confirmación.
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
 
-    plan_comuna = db.query(PlanComunaResponse).filter(PlanComunaResponse.id_plan == id_plan, PlanComunaResponse.id_comuna == id_comuna).first()
+    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
+        raise HTTPException(status_code=404, detail="El plan no existe")
+
+    plan_comuna = db.query(PlanComunaResponse).filter(PlanComunaResponse.id_plan_comuna == id_plan_comuna).first()
 
     if plan_comuna:
         plan_comuna.fecha_eliminacion = get_local_now_datetime()
