@@ -120,3 +120,69 @@ Para el correcto funcionamiento de la aplicación, se debe montar el siguiente *
 ├──🗎 pyproject.toml -- Archivo de gestión de dependencias
 ├──🗎 README.md -- Documentacion del repositorio
 ```
+
+## 👥🔑 Roles de usuario y permisos
+
+
+### 1. Administrador: 
+Equivalente a un super admin, tiene permiso para aplicar cualquier método 👁️✍️🔄🗑️ en todos los endpoints (Ver documentación en Swagger).
+
+Credenciales para probar este rol:
+Usuario
+``` PENDIENTE```
+Contraseña
+```123456```
+
+### 2. Fiscalizador : 
+Es el usuario de la SMA que tiene acceso a los siguientes endpoints métodos y endpoints
+
+Credenciales para probar este rol:
+Usuario
+``` PENDIENTE```
+Contraseña
+```123456```
+
+*   **Regiones:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Comunas:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Planes:**👁️ `GET` (Listar todos y obtener por ID).
+*   **Frecuencias:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Tipos de Medidas:**👁️ `GET` (Listar todos y obtener por ID).
+*   **Tipos de Datos:**👁️ `GET` (Listar todos y obtener por ID).
+*   **Opciones:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Medidas:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Vinculación Medida-Opción:**👁️ `GET` (Listar opciones asociadas a cualquier medida).
+*   **Reportes:**👁️ `GET` (Listar todos los reportes y obtener por ID).
+*   **Medios de Verificación:**👁️ `GET` (Listar todos los medios de verificación y obtener por ID).
+
+*   ❌Nota: No tiene acceso a la gestión de Usuarios.
+
+### 3. Organismo Sectorial: 
+Es el usuario perteneciente a algún organismo sectorial que tiene acceso a los siguientes métodos y endpoints
+
+Credenciales para probar este rol:
+Usuario
+``` PENDIENTE ```
+Contraseña
+```123456```
+
+*   **Regiones:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Comunas:**👁️ `GET` (Listar y obtener por ID, *filtrado automáticamente para mostrar solo comunas pertenecientes a planes con medidas que el organismo debe reportar*).
+*   **Planes:**👁️ `GET` (Listar y obtener por ID, *filtrado automáticamente para mostrar solo planes que contienen medidas que el organismo debe reportar*).
+*   **Frecuencias:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Tipos de Medidas:**👁️ `GET` (Listar todos y obtener por ID).
+*   **Tipos de Datos:**👁️ `GET` (Listar todos y obtener por ID).
+*   **Opciones:**👁️ `GET` (Listar todas y obtener por ID).
+*   **Medidas:**👁️ `GET` (Listar y obtener por ID, *filtrado automáticamente para mostrar solo las medidas que el organismo debe reportar*).
+*   **Vinculación Medida-Opción:**👁️ `GET` (Listar opciones asociadas a una medida, *solo si la medida es una que el organismo debe reportar*).
+*   **Reportes:**
+    *  👁️ `GET`: Listar y obtener por ID (*solo los reportes creados por su organismo*).
+    *  ✍️ `POST`: Crear nuevos reportes (*para su organismo*).
+    *  🔄 `PUT`: Actualizar reportes existentes (*solo los propios*).
+    *  🗑️ `DELETE`: Eliminar reportes (*solo los propios*).
+*   **Medios de Verificación:**
+    *  👁️ `GET`: Listar y obtener por ID (*solo los asociados a medidas/reportes de su organismo*).
+    *  ✍️ `POST`: Crear nuevos medios de verificación (*para sus reportes*).
+    *  🔄 `PUT`: Actualizar medios de verificación existentes (*solo los propios*).
+    *  🗑️ `DELETE`: Eliminar medios de verificación (*solo los propios*).
+
+*   ❌Nota: No tiene acceso a la gestión de Usuarios ni a la gestión directa de Regiones, Comunas, Frecuencias, Tipos, Opciones o Medidas más allá de la lectura filtrada.
