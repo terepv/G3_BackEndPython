@@ -101,6 +101,14 @@ class Usuario(Base):
         self.activo = activo
         self.id_organismo_sectorial = id_organismo_sectorial
 
+class UsuarioResponse(Usuario, AuditMixin):
+    def __init__(self, nombre: str, apellido: str, email:str, id_rol:int, fecha_creacion: datetime | None = None):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.email = email
+        self.id_rol = id_rol
+        self.fecha_creacion = fecha_creacion
+
 class Region(Base):
     __tablename__ = "region"
     id_region: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -195,6 +203,12 @@ class TipoDato(Base):
 
     def __init__(self, tipo_dato: str):
         self.tipo_dato = tipo_dato
+
+class TipoDatoResponse(TipoDato, AuditMixin):
+    def __init__(self, tipo_dato: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.tipo_dato = tipo_dato
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Opcion(Base):
     __tablename__ = "opcion"

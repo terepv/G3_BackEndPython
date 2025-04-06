@@ -107,7 +107,7 @@ def update_region(
     user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     region: RegionCreate = Body(
         openapi_examples={
-            "default": get_example("plan_post"),
+            "default": get_example("region_post"),
         }
     ),
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
@@ -127,10 +127,9 @@ def update_region(
     data = db.query(RegionResponse).filter(RegionResponse.id_region == id_region, RegionResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe región con ese id")
-    if db.query(RegionResponse).filter(RegionResponse.id_region != id_region, RegionResponse.nombre.ilike(region.nombre)).first():
+    if db.query(RegionResponse).filter(RegionResponse.id_region != id_region, RegionResponse.region.ilike(region.region)).first():
         raise HTTPException(status_code=409, detail="Region ya existe")
-    data.nombre = region.nombre
-    data.fecha_creacion = region.fecha_creacion
+    data.region = region.region
     data.fecha_actualizacion = get_local_now_datetime()
     data.actualizado_por = user.email
     db.commit()
@@ -159,7 +158,7 @@ def delete_region(
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
-    region = db.query(RegionResponse).filter(RegionResponse.id_plan == id_region, RegionResponse.eliminado_por == None).first()
+    region = db.query(RegionResponse).filter(RegionResponse.id_region == id_region, RegionResponse.eliminado_por == None).first()
     if region:
         region.fecha_eliminacion = get_local_now_datetime()
         region.eliminado_por = user.email

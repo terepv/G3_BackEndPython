@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from db.models import TipoUsuario, Usuario
+from db.models import Usuario, UsuarioResponse
 from shared.dependencies import AsyncDbSessionDep, RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.schemas import UsuarioCreate, UsuarioOut
 from shared.utils import get_example, get_password_hash
@@ -12,21 +12,25 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 @router.get(
     "/",
-    response_model=list[UsuarioOut],
+    response_model=list[UsuarioResponse],
+    response_model_exclude_none=True,
     summary="Obtener todos los usuarios",
 )
-async def read_users(
-    db: AsyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+def read_users(
+    db: SyncDbSessionDep,
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Devuelve una lista de todos los usuarios.
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Requiere permisos de administrador para acceder a este recurso.
     """
-    result = await db.scalars(select(Usuario).options(selectinload(Usuario.tipo_usuario)))
-    users = result.all()
-    return users
+    usuarios = db.query(UsuarioResponse).filter(UsuarioResponse.eliminado_por == None).all()
+    # Asegúrate de que 'password' esté excluido manualmente si no está siendo excluido por el response_model_exclude
+    for usuario in usuarios:
+        del usuario.password  # Elimina manualmente la columna 'password' de cada usuario
+
+    return usuarios
 
 
 @router.get(
@@ -37,7 +41,7 @@ async def read_users(
 def read_user(
     id_usuario: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Devuelve un usuario por su id.
@@ -63,7 +67,7 @@ def add_usuario(
             "default": get_example("usuario_post"),
         }
     ),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Agrega un usuario a la base de datos.
@@ -111,7 +115,7 @@ def add_usuario(
 def delete_usuario(
     id_usuario: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina un usuario por su id.
