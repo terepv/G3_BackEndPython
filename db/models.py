@@ -196,6 +196,12 @@ class TipoMedida(Base):
     def __init__(self, tipo_medida: str):
         self.tipo_medida = tipo_medida
 
+class TipoMedidaResponse(TipoMedida, AuditMixin):
+    def __init__(self, tipo_medida: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.tipo_medida = tipo_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class TipoDato(Base):
     __tablename__ = "tipo_dato"
     id_tipo_dato: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
