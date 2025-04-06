@@ -5,7 +5,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from routes import (
     auth, comunas
-    # , frecuencias
+    , frecuencias
     , opciones
     # , opciones_medidas
     , organismos_sectoriales, planes, planes_medidas
@@ -38,7 +38,7 @@ app.include_router(planes_medidas.router)
 # app.include_router(tipo_usuarios.router)
 app.include_router(usuarios.router)
 app.include_router(organismos_sectoriales.router)
-# app.include_router(frecuencias.router)
+app.include_router(frecuencias.router)
 app.include_router(tipo_medidas.router)
 app.include_router(tipos_datos.router)
 app.include_router(opciones.router)

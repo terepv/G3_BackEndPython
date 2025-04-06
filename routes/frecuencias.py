@@ -1,6 +1,6 @@
 from typing_extensions import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import Frecuencia, FrecuenciaResponse
+from db.models import FrecuenciaResponse
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
 from shared.schemas import FrecuenciaCreate, UsuarioOut
@@ -83,7 +83,7 @@ def add_frecuencia(
     nombre_frecuencia = frecuencia.frecuencia
     if (
         db.query(FrecuenciaResponse)
-        .filter(FrecuenciaResponse.frecuencia.ilike(nombre_frecuencia))
+        .filter(FrecuenciaResponse.frecuencia.ilike(nombre_frecuencia), FrecuenciaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=409, detail="Frecuencia ya existe")
