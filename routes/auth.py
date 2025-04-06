@@ -1,9 +1,11 @@
 from datetime import timedelta
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from db.models import OrganismoSectorial, Usuario
-from shared.dependencies import SyncDbSessionDep, get_data_from_token
+from shared.dependencies import SyncDbSessionDep, get_data_from_token, get_user_from_token_data
+from shared.schemas import UsuarioOut
 from shared.utils import create_access_token, create_refresh_token, get_local_now_datetime, verify_password
 
 
@@ -69,3 +71,14 @@ def get_refresh_token(
         "token_type": "bearer",
         "access_token": access_token
     }
+
+@router.get(
+    "/me",
+    summary="Obtener información del usuario autenticado",
+    description="Devuelve información del usuario autenticado",
+    response_model_exclude_none=True,
+)
+def read_users_me(
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+):
+    return {"usuario_autenticado": user}
