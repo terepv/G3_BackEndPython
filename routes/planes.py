@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import Medida, Plan, PlanResponse
+from db.models import Medida, MedidaResponse, Plan, PlanResponse
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
 from shared.schemas import PlanCreate, UsuarioOut
@@ -29,10 +29,11 @@ def read_planes(
     if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
         planes = (
             db.query(PlanResponse)
-            .join(Medida, PlanResponse.id_plan == Medida.id_plan)
+            .join(MedidaResponse, PlanResponse.id_plan == MedidaResponse.id_plan)
             .filter(
                 PlanResponse.eliminado_por == None,
-                Medida.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+                MedidaResponse.eliminado_por == None,
+                MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
             )
             .all()
         )
