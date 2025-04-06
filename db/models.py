@@ -108,12 +108,16 @@ class Usuario(Base):
         self.id_organismo_sectorial = id_organismo_sectorial
 
 class UsuarioResponse(Usuario, AuditMixin):
-    def __init__(self, nombre: str, apellido: str, email:str, id_rol:int, fecha_creacion: datetime | None = None):
+    def __init__(self, nombre: str, apellido: str, email:str, password:str,  activo:bool, id_rol:int, id_organismo_sectorial:int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
+        self.password = password
+        self.activo = activo
         self.id_rol = id_rol
+        self.id_organismo_sectorial = id_organismo_sectorial
         self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Region(Base):
     __tablename__ = "region"

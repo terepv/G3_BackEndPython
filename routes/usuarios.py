@@ -1,10 +1,11 @@
+from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from db.models import Usuario, UsuarioResponse
 from shared.dependencies import AsyncDbSessionDep, RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.schemas import UsuarioCreate, UsuarioOut
-from shared.utils import get_example, get_password_hash
+from shared.utils import get_example, get_password_hash, get_local_now_datetime
 from shared.enums import RolesEnum
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
@@ -49,9 +50,9 @@ def read_user(
     Argumentos:
     - id usuario (int)
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Requiere permisos de administrador para acceder a este recurso.
     """
-    usuario = db.query(Usuario).filter(Usuario.id_tipo_usuario == id_usuario).first()
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
     return usuario
@@ -62,6 +63,7 @@ def read_user(
 )
 def add_usuario(
     db: SyncDbSessionDep,
+    user_create: Annotated[UsuarioOut, Depends(get_user_from_token_data)], #Usuario que esta logeado
     usuario: UsuarioCreate = Body(
         openapi_examples={
             "default": get_example("usuario_post"),
@@ -82,24 +84,21 @@ def add_usuario(
 
     Devuelve mensaje de confirmación con el recurso creado.
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Requiere permisos de administrador para acceder a este recurso.
     """
     if db.query(Usuario).filter(Usuario.email.ilike(usuario.email)).first():
         raise HTTPException(status_code=409, detail="Usuario ya existe")
-    if (
-        not db.query(TipoUsuario)
-        .filter(TipoUsuario.id_tipo_usuario == usuario.id_tipo_usuario)
-        .first()
-    ):
-        raise HTTPException(status_code=404, detail="Tipo de usuario no existe")
-
-    data = Usuario(
+    
+    data = UsuarioResponse(
         nombre=usuario.nombre,
         apellido=usuario.apellido,
         email=usuario.email,
         activo=usuario.activo,
-        id_tipo_usuario=usuario.id_tipo_usuario,
+        id_rol=usuario.id_rol,
+        id_organismo_sectorial=usuario.id_organismo_sectorial,
         password=get_password_hash(usuario.password),
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user_create.email
     )
 
     db.add(data)

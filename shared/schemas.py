@@ -32,6 +32,7 @@ class UsuarioCreate(BaseModelCustom):
     password: str
     activo: bool | None = True
     id_rol: int
+    id_organismo_sectorial: int
 
 class UsuarioOut(BaseModelCustom):
     id_usuario: int
