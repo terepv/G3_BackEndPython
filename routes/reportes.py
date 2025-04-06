@@ -154,35 +154,19 @@ def add_reporte(
     if not db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first():
         raise HTTPException(status_code=401, detail="El plan no existe")
     
-    print(
-        db.query(MedidaResponse)
-        .outerjoin(ReporteMedidaResponse, ReporteMedidaResponse.id_medida == MedidaResponse.id_medida)
-        .filter(
-            MedidaResponse.id_plan == id_plan,
-            MedidaResponse.eliminado_por == None,
-            MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
-            and_(
-                ReporteMedidaResponse.id_reporte == None,
-                or_(
-                    ReporteMedidaResponse.eliminado_por == None,
-                    ReporteMedidaResponse.id_reporte != None
-                )
-            )
-        ).statement)
     medidas = (
         db.query(MedidaResponse)
-        .outerjoin(ReporteMedidaResponse, ReporteMedidaResponse.id_medida == MedidaResponse.id_medida)
+        .outerjoin(
+            ReporteMedidaResponse,
+            and_(
+                ReporteMedidaResponse.id_medida == MedidaResponse.id_medida,
+                ReporteMedidaResponse.eliminado_por == None
+            )
+        )
         .filter(
             MedidaResponse.id_plan == id_plan,
             MedidaResponse.eliminado_por == None,
-            MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
-            and_(
-                ReporteMedidaResponse.id_reporte == None,
-                or_(
-                    ReporteMedidaResponse.eliminado_por == None,
-                    ReporteMedidaResponse.id_reporte != None
-                )
-            )
+            MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
         )
         .all()
     )
