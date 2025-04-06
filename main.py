@@ -7,7 +7,7 @@ from routes import (
     auth, comunas
     # , frecuencias, opciones, opciones_medidas
     , organismos_sectoriales, planes, planes_medidas
-    , regiones, planes_comuna, usuarios
+    , regiones, planes_comuna, roles, usuarios
     # , reportes, tipo_medidas, tipo_usuarios, tipos_datos, usuarios
 )
 from shared.utils import get_local_now_datetime
@@ -40,6 +40,7 @@ app.include_router(organismos_sectoriales.router)
 # app.include_router(opciones.router)
 # app.include_router(opciones_medidas.router)
 # app.include_router(reportes.router)
+app.include_router(roles.router)
 
 def run_uvicorn():
     import argparse

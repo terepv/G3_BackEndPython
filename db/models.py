@@ -64,6 +64,12 @@ class Rol(Base):
     id_rol: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     rol: Mapped[str] = mapped_column(String(50), nullable=False)
 
+class RolResponse(Rol, AuditMixin):
+    def __init__(self, rol: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.rol = rol
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class OrganismoSectorial(Base):
     __tablename__ = "organismo_sectorial"
     id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
