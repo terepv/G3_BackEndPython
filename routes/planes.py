@@ -71,7 +71,7 @@ def add_plan(
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
-    if db.query(Plan).filter(Plan.nombre.ilike(plan.nombre)).first():
+    if db.query(Plan).filter(PlanResponse.nombre.ilike(plan.nombre), PlanResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Plan ya existe")
 
     data = PlanResponse(
