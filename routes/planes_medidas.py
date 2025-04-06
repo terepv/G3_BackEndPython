@@ -34,10 +34,11 @@ def read_planes_medidas(
     if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
         medidas = (
             db.query(MedidaResponse)
-            .join(PlanResponse, PlanResponse.id_plan == Medida.id_plan)
+            .join(PlanResponse, PlanResponse.id_plan == MedidaResponse.id_plan)
             .filter(
                 PlanResponse.eliminado_por == None,
-                Medida.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+                MedidaResponse.eliminado_por == None,
+                MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
             )
             .all()
         )

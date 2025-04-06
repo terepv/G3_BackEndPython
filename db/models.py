@@ -303,16 +303,17 @@ class OpcionMedida(Base):
 class Reporte(Base):
     __tablename__ = "reporte"
     id_reporte: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    id_medida: Mapped[int] = mapped_column(Integer, ForeignKey("medida.id_medida"), nullable=False)
-    medida: Mapped[Medida] = relationship(Medida)
-    id_usuario_creacion: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
-    usuario_creacion: Mapped[Usuario] = relationship(Usuario)
-    fecha_registro: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now())
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=False)
+    organismo_sectorial: Mapped[OrganismoSectorial] = relationship(OrganismoSectorial)
+    id_plan: Mapped[int] = mapped_column(Integer, ForeignKey("plan.id_plan"), nullable=False)
+    plan: Mapped[Plan] = relationship(Plan)
 
-    def __init__(self, id_medida: int, id_usuario_creacion: int, fecha_registro: datetime | None = None):
-        self.id_medida = id_medida
-        self.id_usuario_creacion = id_usuario_creacion
-        self.fecha_registro = fecha_registro or datetime.now()
+class ReporteResponse(Reporte, AuditMixin):
+    def __init__(self, id_organismo_sectorial: int, id_plan: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.id_plan = id_plan
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class OrganismoSectorialUsuario(Base):
     __tablename__ = "organismo_sectorial_usuario"
@@ -329,3 +330,48 @@ class MedioVerificacion(Base):
     nombre_archivo: Mapped[str] = mapped_column(String(100), nullable=False)
     archivo: Mapped[bytes] = mapped_column(String(100), nullable=False)
     tamano: Mapped[int] = mapped_column(Integer, nullable=False)
+
+class MedioVerificacionResponse(MedioVerificacion, AuditMixin):
+    def __init__(self, id_reporte: int, nombre_archivo: str, archivo: bytes, tamano: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte = id_reporte
+        self.nombre_archivo = nombre_archivo
+        self.archivo = archivo
+        self.tamano = tamano
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class ReporteMedida(Base):
+    __tablename__ = "reporte_medida"
+    id_reporte_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_reporte: Mapped[int] = mapped_column(Integer, ForeignKey("reporte.id_reporte"), nullable=False)
+    reporte: Mapped[Reporte] = relationship(Reporte)
+    id_medida: Mapped[int] = mapped_column(Integer, ForeignKey("medida.id_medida"), nullable=False)
+    medida: Mapped[Medida] = relationship(Medida)
+
+class ReporteMedidaResponse(ReporteMedida, AuditMixin):
+    def __init__(self, id_reporte: int, id_medida: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte = id_reporte
+        self.id_medida = id_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class Resultado(Base):
+    __tablename__ = "resultado"
+    id_reporte_medida: Mapped[int] = mapped_column(Integer, ForeignKey("reporte_medida.id_reporte_medida"), nullable=False, primary_key=True)
+    reporte_medida: Mapped[ReporteMedida] = relationship(ReporteMedida)
+    texto: Mapped[str] = mapped_column(String(100), nullable=False)
+    numerico: Mapped[float | None] = mapped_column(Integer, nullable=True)
+    si_no: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    id_opcion: Mapped[int | None] = mapped_column(Integer, ForeignKey("opcion.id_opcion"), nullable=True)
+    opcion: Mapped[Opcion] = relationship(Opcion)
+
+class ResultadoResponse(Resultado, AuditMixin):
+    def __init__(self, id_reporte_medida: int, texto: str, numerico: float | None = None, si_no: bool | None = None, id_opcion: int | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte_medida = id_reporte_medida
+        self.texto = texto
+        self.numerico = numerico
+        self.si_no = si_no
+        self.id_opcion = id_opcion
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+    
