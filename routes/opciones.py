@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, Depends, HTTPException
+from sqlalchemy import select
 from db.models import Opcion
 from shared.dependencies import RoleChecker, SyncDbSessionDep
 from shared.enums import RolesEnum
@@ -15,19 +16,21 @@ router = APIRouter(prefix="/opciones", tags=["Opciones"])
 )
 def read_opciones(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una lista de todas las opciones.
 
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    Requiere estar autenticado con rol de ADMIN, FISCALIZADOR u Organismo Sectorial para acceder a este recurso.
     """
     opciones = db.query(Opcion).all()
     return opciones
 
 
 @router.post(
-    "/", summary="Añade una opcion", status_code=201
+    "/", 
+    summary="Añade una opcion", 
+    status_code=201
 )
 def add_opcion(
     db: SyncDbSessionDep,
@@ -36,7 +39,7 @@ def add_opcion(
             "default": get_example("opcion_post"),
         }
     ),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Agrega una opción.
@@ -46,7 +49,7 @@ def add_opcion(
 
     Devuelve mensaje de confirmación con el recurso creado.
     
-    Requiere estar autenticado con rol de SMA para acceder a este recurso.
+    Requiere estar autenticado con rol de ADMIN para acceder a este recurso.
     """
     nombre_opcion = opcion.opcion
     if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion)).first():
@@ -63,6 +66,50 @@ def add_opcion(
     return {"message": "Se creó opcion", "opcion": opcion}
 
 
+@router.put(
+    "/{id_opcion}",
+    summary="Actualiza una opción por su id",
+    status_code=201,
+)
+
+def update_opcion(
+    id_opcion: int,
+    db: SyncDbSessionDep,
+    opcion_update: OpcionCreate = Body(
+        openapi_examples={
+            "default": get_example("opcion_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Actualiza el texto de una opción existente.
+
+    Solo los usuarios con rol ADMIN pueden actualizar una opción.
+    """
+    db_opcion = db.get(Opcion, id_opcion)
+
+    if not db_opcion:
+        raise HTTPException(status_code=404, detail="Opción no encontrada")
+
+    nombre_opcion = opcion_update.opcion
+    if db.query(Opcion).filter(Opcion.opcion.ilike(nombre_opcion), Opcion.id_opcion != id_opcion).first():
+        raise HTTPException(status_code=409, detail="Ya existe una opción con ese nombre")
+    if len(opcion_update.opcion) == 0:
+        raise HTTPException(status_code=400, detail="Opción no puede estar vacío")
+    if len(opcion_update.opcion) > 100:
+        raise HTTPException(status_code=400, detail="Opción muy larga")
+
+    db_opcion.opcion = nombre_opcion
+    db.commit()
+    db.refresh(db_opcion)
+
+    return db_opcion
+
+
+
+
+
 @router.delete(
     "/{id_opcion}",
     summary="Elimina una opción",
@@ -70,12 +117,12 @@ def add_opcion(
 def delete_opcion(
     id_opcion: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina una opción por su id.
 
-    Requiere ser usuario de SMA para acceder a este recurso.
+    Requiere ser usuario de ADMIN para acceder a este recurso.
     """
     opcion = db.query(Opcion).filter(Opcion.id_opcion == id_opcion).first()
     if opcion:
