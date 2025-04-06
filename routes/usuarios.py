@@ -114,6 +114,7 @@ def add_usuario(
 def delete_usuario(
     id_usuario: int,
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
@@ -124,11 +125,11 @@ def delete_usuario(
 
     Devuelve mensaje de confirmación con el recurso eliminado.
 
-    Requiere permisos de SMA para acceder a este recurso.
+    Requiere permisos de administrador para acceder a este recurso.
     """
-    usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
+    usuario= db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario == id_usuario, UsuarioResponse.eliminado_por == None).first()
     if usuario:
-        db.delete(usuario)
+        usuario.fecha_eliminacion = get_local_now_datetime()
+        usuario.eliminado_por = user.email
         db.commit()
-
     return {"message": "Se eliminó usuario"}
