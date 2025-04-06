@@ -15,12 +15,12 @@ router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 )
 def read_opciones_medidas(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.FISCALIZADOR, RolesEnum.ADMIN, RolesEnum.ORGANISMO_SECTORIAL])),
 ): 
     """
     Devuelve una lista con todas las opciones de medidas.
 
-    Requiere ser usuario de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """  
     opciones_medidas = db.query(OpcionMedida).join(Medida).join(Opcion).all()
     return opciones_medidas
@@ -38,7 +38,7 @@ def add_opcion_medida(
             "default": get_example("opcion_medida_post"),
         }
     ),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Agrega una opción de medida a la base de datos.
@@ -49,7 +49,7 @@ def add_opcion_medida(
 
     Devuelve mensaje de confirmación con el recurso creado.
 
-    Requiere ser usuario de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     opcion = (
         db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
@@ -90,12 +90,12 @@ def add_opcion_medida(
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina una opcion de medida por su id.
 
-    Requiere ser usuario de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     opcion_medida = (
         db.query(OpcionMedida)

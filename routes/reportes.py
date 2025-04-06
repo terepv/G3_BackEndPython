@@ -154,6 +154,21 @@ def add_reporte(
     if not db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first():
         raise HTTPException(status_code=401, detail="El plan no existe")
     
+    print(
+        db.query(MedidaResponse)
+        .outerjoin(ReporteMedidaResponse, ReporteMedidaResponse.id_medida == MedidaResponse.id_medida)
+        .filter(
+            MedidaResponse.id_plan == id_plan,
+            MedidaResponse.eliminado_por == None,
+            MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
+            and_(
+                ReporteMedidaResponse.id_reporte == None,
+                or_(
+                    ReporteMedidaResponse.eliminado_por == None,
+                    ReporteMedidaResponse.id_reporte != None
+                )
+            )
+        ).statement)
     medidas = (
         db.query(MedidaResponse)
         .outerjoin(ReporteMedidaResponse, ReporteMedidaResponse.id_medida == MedidaResponse.id_medida)
@@ -161,8 +176,13 @@ def add_reporte(
             MedidaResponse.id_plan == id_plan,
             MedidaResponse.eliminado_por == None,
             MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
-            ReporteMedidaResponse.eliminado_por == None,
-            ReporteMedidaResponse.id_reporte == None,
+            and_(
+                ReporteMedidaResponse.id_reporte == None,
+                or_(
+                    ReporteMedidaResponse.eliminado_por == None,
+                    ReporteMedidaResponse.id_reporte != None
+                )
+            )
         )
         .all()
     )
@@ -441,7 +461,7 @@ def delete_reporte(
 async def download_verification_file(
     id_reporte: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.FISCALIZADOR, RolesEnum.ADMIN, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Descarga el archivo asociado al medio de verificación de un reporte.
