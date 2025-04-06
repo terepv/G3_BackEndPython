@@ -152,7 +152,6 @@ class PlanResponse(Plan, AuditMixin):
         self.fecha_publicacion = fecha_publicacion or datetime.now()
         self.fecha_creacion = fecha_creacion
         self.creado_por = creado_por
-    pass
 
 class PlanComuna(Base):
     __tablename__ = "plan_comuna"
@@ -235,6 +234,21 @@ class Medida(Base):
         self.desc_medio_de_verificacion = desc_medio_de_verificacion
         self.id_tipo_dato = id_tipo_dato
         self.reporte_unico = reporte_unico
+
+class MedidaResponse(Medida, AuditMixin):
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, reporte_unico: bool, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.nombre_corto = nombre_corto
+        self.indicador = indicador
+        self.formula_calculo = formula_calculo
+        self.id_frecuencia = id_frecuencia
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.id_tipo_medida = id_tipo_medida
+        self.id_plan = id_plan
+        self.desc_medio_de_verificacion = desc_medio_de_verificacion
+        self.id_tipo_dato = id_tipo_dato
+        self.reporte_unico = reporte_unico
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class OpcionMedida(Base):
     __tablename__ = "opcion_medida"
