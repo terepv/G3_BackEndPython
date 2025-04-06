@@ -7,6 +7,5 @@
     "id_tipo_medida": 1,
     "desc_medio_de_verificacion": "desc_medio_de_verificacion",
     "id_tipo_dato": 1,
-    "cron": "0 0 1 1 *",
     "reporte_unico": false
 }

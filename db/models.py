@@ -64,6 +64,20 @@ class Rol(Base):
     id_rol: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     rol: Mapped[str] = mapped_column(String(50), nullable=False)
 
+class OrganismoSectorial(Base):
+    __tablename__ = "organismo_sectorial"
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+
+    def __init__(self, organismo_sectorial: str):
+        self.organismo_sectorial = organismo_sectorial
+
+class OrganismoSectorialResponse(OrganismoSectorial, AuditMixin):
+    def __init__(self, organismo_sectorial: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.organismo_sectorial = organismo_sectorial
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class Usuario(Base):
     __tablename__ = "usuario"
     id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -73,15 +87,19 @@ class Usuario(Base):
     password: Mapped[str] = mapped_column(String(100), nullable=False)
     id_rol: Mapped[int] = mapped_column(Integer, ForeignKey("rol.id_rol"), nullable=False)
     rol: Mapped[Rol] = relationship(Rol)
+    id_organismo_sectorial: Mapped[int | None] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=True)
+    organismo_sectorial: Mapped["OrganismoSectorial"] = relationship(OrganismoSectorial)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     
-    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_rol: int, activo: bool = True):
+    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_rol: int, id_organismo_sectorial: int | None, activo: bool = True):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
         self.password = password
         self.id_rol = id_rol
         self.activo = activo
+        self.id_organismo_sectorial = id_organismo_sectorial
 
 class Region(Base):
     __tablename__ = "region"
@@ -156,20 +174,6 @@ class PlanComunaResponse(PlanComuna, AuditMixin):
         self.fecha_creacion = fecha_creacion
         self.creado_por = creado_por
 
-class OrganismoSectorial(Base):
-    __tablename__ = "organismo_sectorial"
-    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-
-    def __init__(self, organismo_sectorial: str):
-        self.organismo_sectorial = organismo_sectorial
-
-class OrganismoSectorialResponse(OrganismoSectorial, AuditMixin):
-    def __init__(self, organismo_sectorial: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
-        self.organismo_sectorial = organismo_sectorial
-        self.fecha_creacion = fecha_creacion
-        self.creado_por = creado_por
-
 class Frecuencia(Base):
     __tablename__ = "frecuencia"
     id_frecuencia: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -219,10 +223,9 @@ class Medida(Base):
     desc_medio_de_verificacion: Mapped[str] = mapped_column(String(100), nullable=False)
     id_tipo_dato: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_dato.id_tipo_dato"), nullable=False)
     tipo_dato: Mapped[TipoDato] = relationship(TipoDato)
-    cron: Mapped[str | None] = mapped_column(String(100), nullable=True)
     reporte_unico: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, cron: str | None, reporte_unico: bool):
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, reporte_unico: bool):
         self.nombre_corto = nombre_corto
         self.indicador = indicador
         self.formula_calculo = formula_calculo
@@ -232,7 +235,6 @@ class Medida(Base):
         self.id_plan = id_plan
         self.desc_medio_de_verificacion = desc_medio_de_verificacion
         self.id_tipo_dato = id_tipo_dato
-        self.cron = cron
         self.reporte_unico = reporte_unico
 
 class OpcionMedida(Base):

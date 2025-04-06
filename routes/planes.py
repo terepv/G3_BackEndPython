@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import Plan, PlanResponse
+from db.models import Medida, Plan, PlanResponse
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
 from shared.schemas import PlanCreate, UsuarioOut
@@ -17,13 +17,27 @@ router = APIRouter(prefix="/planes", tags=["Planes"])
 )
 def read_planes(
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """ Devuelve una lista de todos los planes.
     
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
+
+    En caso de ser un organismo sectorial, solo podra acceder a los planes que le corresponden emitir un reporte.
     """
-    planes = db.query(PlanResponse).filter(PlanResponse.eliminado_por == None).all()
+    if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
+        planes = (
+            db.query(PlanResponse)
+            .join(Medida, PlanResponse.id_plan == Medida.id_plan)
+            .filter(
+                PlanResponse.eliminado_por == None,
+                Medida.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+            )
+            .all()
+        )
+    else:
+        planes = db.query(PlanResponse).filter(PlanResponse.eliminado_por == None).all()
     return planes
 
 
@@ -154,14 +168,30 @@ def delete_plan(
 def read_plan(
     id_plan: int,
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve un plan por su id.
 
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
+
+    En caso de ser un organismo sectorial, solo podra acceder a los planes que le corresponden emitir un reporte.
     """
-    plan = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
+    if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
+        plan = (
+            db.query(PlanResponse)
+            .join(Medida, PlanResponse.id_plan == Medida.id_plan)
+            .filter(
+                PlanResponse.eliminado_por == None,
+                PlanResponse.id_plan == id_plan,
+                Medida.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+            )
+            .first()
+        )
+    else:
+        plan = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
+
     if not plan:
         raise HTTPException(status_code=404, detail="No existe plan con ese id")
     return plan

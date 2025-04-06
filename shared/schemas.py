@@ -21,6 +21,10 @@ class Rol(BaseModelCustom):
     id_rol: int
     rol: str
 
+class OrganismoSectorial(BaseModelCustom):
+    id_organismo_sectorial: int
+    organismo_sectorial: str
+
 class UsuarioCreate(BaseModelCustom):
     nombre: str
     apellido: str
@@ -35,6 +39,7 @@ class UsuarioOut(BaseModelCustom):
     apellido: str
     email: str
     rol: Rol
+    organismo_sectorial: OrganismoSectorial | None = None
 
 class RegionCreate(BaseModelCustom):
     nombre: str = Field(..., min_length=3, max_length=200)
@@ -86,7 +91,6 @@ class MedidaCreate(BaseModelCustom):
     id_tipo_medida: int
     desc_medio_de_verificacion: str
     id_tipo_dato: int
-    cron: str | None
     reporte_unico: bool
 
 class MedidaOut(BaseModelCustom):
@@ -100,7 +104,6 @@ class MedidaOut(BaseModelCustom):
     id_plan: int
     desc_medio_de_verificacion: str
     id_tipo_dato: int
-    cron: str | None
     reporte_unico: bool
 
 class Opcion(BaseModelCustom):

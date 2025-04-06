@@ -2,7 +2,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from db.models import Usuario
+from db.models import OrganismoSectorial, Usuario
 from shared.dependencies import SyncDbSessionDep, get_data_from_token
 from shared.utils import create_access_token, create_refresh_token, get_local_now_datetime, verify_password
 
@@ -37,6 +37,10 @@ def get_token(
                 "id_rol": user.id_rol,
                 "rol": user.rol.rol,
             },
+            "organismo_sectorial": {
+                "id_organismo_sectorial": user.organismo_sectorial.id_organismo_sectorial,
+                "organismo_sectorial": user.organismo_sectorial.organismo_sectorial,
+            } if user.organismo_sectorial else None,
         }
     }
     access_token = create_access_token(data=data)

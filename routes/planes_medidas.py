@@ -58,7 +58,6 @@ def add_medida(
     - id del tipo de medida (int)
     - descripción del medio de verificación (str)
     - id del tipo de dato (int)
-    - cron (str)
     - reporte unico (bool)
     
     Devuelve mensaje de confirmación con el recurso creado.
@@ -75,7 +74,6 @@ def add_medida(
         id_plan=id_plan,
         desc_medio_de_verificacion=medida.desc_medio_de_verificacion,
         id_tipo_dato=medida.id_tipo_dato,
-        cron=medida.cron,
         reporte_unico=medida.reporte_unico,
     )
 
@@ -146,7 +144,6 @@ def update_medida(
     - id del tipo de medida (int)
     - descripción del medio de verificación (str)
     - id del tipo de dato (int)
-    - cron (str)
     - reporte unico (bool)
     
     Devuelve mensaje de confirmación con el recurso actualizado.
@@ -198,7 +195,6 @@ def update_medida(
     medida_db.id_plan = id_plan
     medida_db.desc_medio_de_verificacion = medida.desc_medio_de_verificacion
     medida_db.id_tipo_dato = medida.id_tipo_dato
-    medida_db.cron = medida.cron
     medida_db.reporte_unico = medida.reporte_unico
 
     db.commit()
