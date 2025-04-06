@@ -73,7 +73,7 @@ class OrganismoSectorialCreate(BaseModelCustom):
     organismo_sectorial: str = Field(..., min_length=3, max_length=100)
 
 class FrecuenciaCreate(BaseModelCustom):
-    frecuencia: str = Field(..., min_length=3, max_length=100)
+    frecuencia: str = Field(...)
 
 class TipoMedidaCreate(BaseModelCustom):
     tipo_medida: str = Field(..., min_length=3, max_length=100)
