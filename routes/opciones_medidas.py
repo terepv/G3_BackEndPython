@@ -21,8 +21,8 @@ def read_opciones_medidas(
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
-    Si el rol del usuario es administrador o fiscaliazdor, devuelve una lista con todas las opciones de medidas.
-    Si el rol es organismo sectorial, devuelve lista de opciones de medidas que le correspondan a ese organismo sectorial.
+    Devuelve una lista con todas las opciones de medidas.
+    Si el rol es organismo sectorial, devuelve lista asociada a medidas que le correspondan a ese organismo sectorial.
 
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador, Organismo Sectorial.
     """
@@ -72,12 +72,16 @@ def add_opcion_medida(
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     opcion = (
-        db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
+        db.query(OpcionResponse).filter(
+            OpcionResponse.id_opcion == opcion_medida.id_opcion,
+            OpcionResponse.eliminado_por == None).first()
     )
     if not opcion:
         raise HTTPException(status_code=404, detail="Opcion no existe")
     medida = (
-        db.query(Medida).filter(Medida.id_medida == opcion_medida.id_medida).first()
+        db.query(Medida).filter(
+            MedidaResponse.id_medida == opcion_medida.id_medida,
+            MedidaResponse.eliminado_por == None).first()
     )
     if not medida:
         raise HTTPException(status_code=404, detail="Medida no existe")
@@ -90,6 +94,7 @@ def add_opcion_medida(
         .filter(
             OpcionMedidaResponse.id_opcion == opcion_medida.id_opcion,
             OpcionMedidaResponse.id_medida == opcion_medida.id_medida,
+            OpcionMedidaResponse.eliminado_por == None,
         )
         .first()
     ):
