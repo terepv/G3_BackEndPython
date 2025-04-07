@@ -124,21 +124,21 @@ Para el correcto funcionamiento de la aplicación, se debe montar el siguiente *
 ## 👥🔑 Roles de usuario y permisos
 
 
-### 1. Administrador: 
+### 1. Administrador [1]: 
 Equivalente a un super admin, tiene permiso para aplicar cualquier método 👁️✍️🔄🗑️ en todos los endpoints (Ver documentación en Swagger).
 
 Credenciales para probar este rol:
 Usuario
-``` PENDIENTE```
+``` hpinilla@gmail.com ```
 Contraseña
 ```123456```
 
-### 2. Fiscalizador : 
+### 2. Fiscalizador [2] : 
 Es el usuario de la SMA que tiene acceso a los siguientes endpoints métodos y endpoints
 
 Credenciales para probar este rol:
 Usuario
-``` PENDIENTE```
+``` teresa@gmail.com ```
 Contraseña
 ```123456```
 
@@ -156,12 +156,12 @@ Contraseña
 
 *   ❌Nota: No tiene acceso a la gestión de Usuarios.
 
-### 3. Organismo Sectorial: 
+### 3. Organismo Sectorial [3] : 
 Es el usuario perteneciente a algún organismo sectorial que tiene acceso a los siguientes métodos y endpoints
 
 Credenciales para probar este rol:
 Usuario
-``` PENDIENTE ```
+``` jbernal@gmail.com ```
 Contraseña
 ```123456```
 
