@@ -4,7 +4,7 @@ from db.models import Medida, MedidaResponse, Opcion, OpcionResponse, OpcionMedi
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
 from shared.schemas import OpcionMedidaCreate, OpcionMedidaOut, UsuarioOut
-from shared.utils import get_example
+from shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 
@@ -109,19 +109,24 @@ def add_opcion_medida(
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina una opcion de medida por su id.
 
+    Argumentos:
+    - id opcion medida (int)
+
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
 1    """
     opcion_medida = (
-        db.query(OpcionMedida)
-        .filter(OpcionMedida.id_opcion_medida == id_opcion_medida)
+        db.query(OpcionMedidaResponse)
+        .filter(OpcionMedidaResponse.id_opcion_medida == id_opcion_medida, OpcionMedidaResponse.eliminado_por==None)
         .first()
     )
     if opcion_medida:
-        db.delete(opcion_medida)
+        opcion_medida.eliminado_por = user.email
+        opcion_medida.fecha_eliminacion = get_local_now_datetime()
         db.commit()
     return {"message": "Se eliminó opcion de medida"}
