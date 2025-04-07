@@ -127,7 +127,6 @@ class MedioVerificacionOut(BaseModelCustom):
 class ReporteOut(BaseModelCustom):
     id_reporte: int
     id_medida: int
-    fecha_registro: datetime
     medio_verificacion: MedioVerificacionOut
     usuario_creacion: UsuarioOut
 
@@ -137,3 +136,17 @@ class TipoDatoCreate(BaseModelCustom):
 class TipoDatoOut(BaseModelCustom, AuditMixin):
     id_tipo_dato: int
     tipo_dato: str
+
+class ResultadoCreate(BaseModelCustom):
+    texto: str | None = None
+    numerico: float | None = None
+    si_no: bool | None = None
+    id_opcion: int | None = None
+
+class ReporteMedidaCreate(BaseModelCustom):
+    id_medida: int
+    resultado: ResultadoCreate
+
+
+class ReporteCreate(BaseModelCustom):
+    reporte_medidas: list[ReporteMedidaCreate]

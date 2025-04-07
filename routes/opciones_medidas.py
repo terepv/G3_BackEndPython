@@ -69,7 +69,7 @@ def add_opcion_medida(
 
     Devuelve mensaje de confirmación con el recurso creado.
 
-    Requiere ser usuario de SMA para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
     opcion = (
         db.query(Opcion).filter(Opcion.id_opcion == opcion_medida.id_opcion).first()
@@ -115,8 +115,8 @@ def delete_opcion_medida(
     """
     Elimina una opcion de medida por su id.
 
-    Requiere ser usuario de SMA para acceder a este recurso.
-    """
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+1    """
     opcion_medida = (
         db.query(OpcionMedida)
         .filter(OpcionMedida.id_opcion_medida == id_opcion_medida)

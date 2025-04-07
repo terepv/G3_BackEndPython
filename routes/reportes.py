@@ -1,88 +1,142 @@
 from io import BytesIO
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from operator import and_, or_
+from typing import Annotated
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-from db.models import Medida, MedioVerificacion, OrganismoSectorialUsuario, Reporte, Usuario
+from db.models import Medida, MedidaResponse, MedioVerificacion, MedioVerificacionResponse, OrganismoSectorial, OrganismoSectorialResponse, OrganismoSectorialUsuario, PlanResponse, ReporteMedidaResponse, ReporteResponse, ResultadoResponse, Usuario
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
-from shared.schemas import MedioVerificacionOut, ReporteOut, UsuarioOut
+from shared.schemas import MedioVerificacionOut, ReporteCreate, ReporteMedidaCreate, ReporteOut, ResultadoCreate, UsuarioOut
+from shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
 
 @router.get(
     "/",
-    response_model=list[ReporteOut],
+    # response_model=list[ReporteResponse],
     summary="Obtener todos los reportes",
+    response_model_exclude_none=True,
 )
 async def read_reports(
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Devuelve una lista con todos los reportes.
 
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
+
+    En caso de ser un organismo sectorial, solo podra acceder a los reportes que le corresponden emitir.
     """
-    results = db.query(Reporte, MedioVerificacion).outerjoin(MedioVerificacion, Reporte.id_reporte == MedioVerificacion.id_reporte).all()
-    reports = []
-    for report, medio_verificacion in results:
-        medio_verificacion_out = None
-        if medio_verificacion:
-            medio_verificacion_out = MedioVerificacionOut(
-                id_reporte=medio_verificacion.id_reporte,
-                nombre_archivo=medio_verificacion.nombre_archivo,
-                tamano=medio_verificacion.tamano
+    if user.organismo_sectorial:
+        reportes = (
+            db.query(ReporteResponse)
+            .filter(
+                ReporteResponse.eliminado_por == None,
+                ReporteResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
             )
-        reports.append(ReporteOut(
-            id_reporte=report.id_reporte,
-            id_medida=report.id_medida,
-            id_usuario_creacion=report.id_usuario_creacion,
-            usuario_creacion=report.usuario_creacion, 
-            fecha_registro=report.fecha_registro,
-            medio_verificacion=medio_verificacion_out
-        ))
-    return reports
+            .all()
+        )
+    else:
+        reportes = db.query(ReporteResponse).filter(ReporteResponse.eliminado_por == None).all()
+    return reportes
 
 @router.get(
     "/{id_reporte}",
-    response_model=ReporteOut,
-    summary="Obtener un reporte por su id",
+    response_model=ReporteResponse,
+    summary="Obtener un reporte por ID",
+    response_model_exclude_none=True,
 )
-def read_report(
+async def read_report_by_id(
     id_reporte: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
-    Devuelve un reporte por su id.
+    Devuelve un reporte por ID.
 
-    Argumentos:
-    - id del reporte (int)
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
 
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    En caso de ser un organismo sectorial, solo podra acceder a los reportes que le corresponden emitir.
     """
-    result = db.query(Reporte, MedioVerificacion).outerjoin(MedioVerificacion, Reporte.id_reporte == MedioVerificacion.id_reporte).filter(Reporte.id_reporte == id_reporte).first()
-    if not result:
-        raise HTTPException(status_code=404, detail="No existe reporte con ese id")
-
-    reporte, medio_verificacion = result
-    medio_verificacion_out = None
-    if medio_verificacion:
-        medio_verificacion_out = MedioVerificacionOut(
-            id_reporte=medio_verificacion.id_reporte,
-            nombre_archivo=medio_verificacion.nombre_archivo,
-            tamano=medio_verificacion.tamano
+    if user.organismo_sectorial:
+        reporte = (
+            db.query(ReporteResponse)
+            .filter(
+                ReporteResponse.eliminado_por == None,
+                ReporteResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial,
+                ReporteResponse.id_reporte == id_reporte,
+            )
+            .first()
         )
+    else:
+        reporte = db.query(ReporteResponse).filter(ReporteResponse.eliminado_por == None, ReporteResponse.id_reporte == id_reporte).first()
+    if not reporte:
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
+    return reporte
 
-    return ReporteOut(
-        id_reporte=reporte.id_reporte,
-        id_medida=reporte.id_medida,
-        id_usuario_creacion=reporte.id_usuario_creacion,
-        usuario_creacion=reporte.usuario_creacion, 
-        fecha_registro=reporte.fecha_registro,
-        medio_verificacion=medio_verificacion_out
+@router.get(
+    "/{id_reporte}/medidas",
+    summary="Obtener las medidas de un reporte",
+    response_model_exclude_none=True,
+)
+async def read_report_measures(
+    id_reporte: int,
+    db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
+):
+    """
+    Devuelve las medidas de un reporte por ID.
+
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
+
+    En caso de ser un organismo sectorial, solo podra acceder a los reportes que le corresponden emitir.
+    """    
+    results = (
+        db.query(ReporteMedidaResponse, ResultadoResponse, MedidaResponse)
+        .outerjoin(ResultadoResponse, and_(
+                    ResultadoResponse.id_reporte_medida == ReporteMedidaResponse.id_reporte_medida,
+                    ResultadoResponse.eliminado_por == None
+                ))
+        .join(MedidaResponse, ReporteMedidaResponse.id_medida == MedidaResponse.id_medida)
+        .filter(
+            ReporteMedidaResponse.eliminado_por == None,
+            ReporteMedidaResponse.id_reporte == id_reporte,
+        )
+        .all()
     )
+    medidas = []
+    for reporte_medida, resultado, medida in results:
+        medidas.append({
+            "id_reporte_medida": reporte_medida.id_reporte_medida,
+            "medida": {
+                "id_medida": medida.id_medida,
+                "nombre_corto": medida.nombre_corto,
+                "indicador": medida.indicador,
+                "formula_calculo": medida.formula_calculo,
+            },
+            "resultado": {
+                "id_reporte_medida": resultado.id_reporte_medida,
+                "texto": resultado.texto,
+                "numerico": resultado.numerico,
+                "si_no": resultado.si_no,
+                "id_opcion": resultado.id_opcion,
+                "fecha_creacion": resultado.fecha_creacion,
+                "creado_por": resultado.creado_por,
+                "fecha_actualizacion": resultado.fecha_actualizacion,
+                "actualizado_por": resultado.actualizado_por,
+                "fecha_eliminacion": resultado.fecha_eliminacion,
+                "eliminado_por": resultado.eliminado_por,
+            } if resultado else None,
+            "fecha_creacion": medida.fecha_creacion,
+            "creado_por": medida.creado_por,
+        })
+    return medidas
 
 @router.post(
     "/", 
@@ -91,29 +145,257 @@ def read_report(
 )
 def add_reporte(
     db: SyncDbSessionDep,
-    id_medida: int = Form(..., description="Id de la medida a la que se le reportará"),
     archivo: UploadFile = File(...),
+    id_plan: int = Form(..., gt=0),
     user: UsuarioOut | None = Depends(get_user_from_token_data),
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ORGANISMO_SECTORIAL])),
+
 ):
-    medida = db.query(Medida).filter(Medida.id_medida == id_medida).first()
-    if not medida:
-        raise HTTPException(status_code=404, detail="No existe medida con ese id")
-    organismo_sectorial_medida = db.query(Usuario).filter(Usuario.id_usuario == user.id_usuario).join(OrganismoSectorialUsuario).filter(OrganismoSectorialUsuario.id_organismo_sectorial == medida.id_organismo_sectorial).first()
-    if not organismo_sectorial_medida:
-        raise HTTPException(status_code=401, detail="El usuario no pertenece al organismo sectorial que debe reportar la medida")
+    if not db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first():
+        raise HTTPException(status_code=401, detail="El plan no existe")
     
-    reporte = Reporte(id_medida=id_medida, id_usuario_creacion=user.id_usuario)
-    db.add(reporte)
-    db.commit()
-    db.refresh(reporte)
+    medidas = (
+        db.query(MedidaResponse)
+        .outerjoin(
+            ReporteMedidaResponse,
+            and_(
+                ReporteMedidaResponse.id_medida == MedidaResponse.id_medida,
+                ReporteMedidaResponse.eliminado_por == None
+            )
+        )
+        .filter(
+            MedidaResponse.id_plan == id_plan,
+            MedidaResponse.eliminado_por == None,
+            MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+        )
+        .all()
+    )
+    if not medidas:
+        raise HTTPException(status_code=401, detail="No existen medidas para este plan o ya han sido reportadas")
+    
+    try:
+        reporte = ReporteResponse(
+            fecha_creacion=get_local_now_datetime(),
+            creado_por=user.email,
+            id_organismo_sectorial=user.organismo_sectorial.id_organismo_sectorial,
+            id_plan=id_plan,
+        )
+        db.add(reporte)
+        db.flush()
 
-    medio_verificacion = MedioVerificacion(id_reporte=reporte.id_reporte, archivo=archivo.file.read(), nombre_archivo=archivo.filename, tamano=archivo.size, reporte=reporte)
-    db.add(medio_verificacion)
-    db.commit()
-    db.refresh(medio_verificacion)
+        for medida in medidas:
+            reporte_medida = ReporteMedidaResponse(
+                id_reporte=reporte.id_reporte,
+                id_medida=medida.id_medida,
+                fecha_creacion=get_local_now_datetime(),
+                creado_por=user.email,
+            )
+            db.add(reporte_medida)
+            db.flush()
 
-    return {"message": "Se ha creado el reporte"}
+        medio_verificacion = MedioVerificacionResponse(
+            id_reporte=reporte.id_reporte, 
+            nombre_archivo=archivo.filename, 
+            archivo=archivo.file.read(), 
+            tamano=archivo.size, 
+            fecha_creacion=get_local_now_datetime(),
+            creado_por=user.email,
+        )
+        db.add(medio_verificacion)
+        db.commit()
+
+        db.refresh(reporte)
+        db.refresh(medio_verificacion)
+    except Exception as e:
+        print(e)
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error al crear el reporte")
+
+    
+    return {
+        "message": "Se ha creado el reporte", 
+        "reporte": {
+            "id_reporte": reporte.id_reporte,
+            "fecha_creacion": reporte.fecha_creacion,
+            "creado_por": reporte.creado_por,
+        }, 
+        "medio_verificacion": {
+            "id_reporte": medio_verificacion.id_reporte,
+            "nombre_archivo": medio_verificacion.nombre_archivo,
+            "tamano": medio_verificacion.tamano,
+        }
+    }
+
+@router.post(
+    "/medidas/{id_reporte_medida}/resultados", 
+    summary="Añade un resultado a una medida",
+    status_code=201,
+)
+def add_resultado(
+    db: SyncDbSessionDep,
+    id_reporte_medida: int,
+    user: UsuarioOut | None = Depends(get_user_from_token_data),
+    reporte_medida: ResultadoCreate = Body(
+        ...,
+        title="Reporte Medida",
+        description="Lista de medidas a reportar con su resultado",
+        openapi_examples={
+            "default": get_example("resultado_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ORGANISMO_SECTORIAL])),
+):
+    if not (
+        db.query(ReporteMedidaResponse)
+        .filter(
+            ReporteMedidaResponse.id_reporte_medida == id_reporte_medida, 
+            ReporteMedidaResponse.eliminado_por == None,
+        )
+        .first()
+    ):
+        raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
+    
+    if db.query(ResultadoResponse).filter(ResultadoResponse.id_reporte_medida == id_reporte_medida).first():
+        raise HTTPException(status_code=401, detail="Ya existe un resultado para este reporte de medida")
+
+    if reporte_medida.texto is None and reporte_medida.numerico is None and reporte_medida.si_no is None and reporte_medida.id_opcion is None:
+        raise HTTPException(status_code=401, detail="Debe ingresar al menos un resultado")
+    
+    data = ResultadoResponse(
+        id_reporte_medida=id_reporte_medida,
+        texto=reporte_medida.texto,
+        numerico=reporte_medida.numerico,
+        si_no=reporte_medida.si_no,
+        id_opcion=reporte_medida.id_opcion,
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user.email,
+    )
+
+    db.add(data)
+    db.commit()
+    db.refresh(data)
+    
+    return {
+        "message": "Se ha creado el resultado", 
+        "resultado": {
+            "id_reporte_medida": data.id_reporte_medida,
+            "texto": data.texto,
+            "numerico": data.numerico,
+            "si_no": data.si_no,
+            "id_opcion": data.id_opcion,
+            "fecha_creacion": data.fecha_creacion,
+            "creado_por": data.creado_por,
+            "fecha_actualizacion": data.fecha_actualizacion,
+            "actualizado_por": data.actualizado_por,
+            "fecha_eliminacion": data.fecha_eliminacion,
+            "eliminado_por": data.eliminado_por,
+        }
+    }
+
+@router.put(
+    "/medidas/{id_reporte_medida}/resultados", 
+    summary="Modifica el resultado de una medida",
+)
+def update_resultado(
+    db: SyncDbSessionDep,
+    id_reporte_medida: int,
+    user: UsuarioOut | None = Depends(get_user_from_token_data),
+    reporte_medida: ResultadoCreate = Body(
+        ...,
+        title="Reporte Medida",
+        description="Lista de medidas a reportar con su resultado",
+        openapi_examples={
+            "default": get_example("resultado_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ORGANISMO_SECTORIAL])),
+):
+    reporte = (
+        db.query(ReporteMedidaResponse)
+        .filter(
+            ReporteMedidaResponse.id_reporte_medida == id_reporte_medida, 
+            ReporteMedidaResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if not reporte:
+        raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
+    
+    resultado = (
+        db.query(ResultadoResponse)
+        .filter(
+            ResultadoResponse.id_reporte_medida == id_reporte_medida,
+            ResultadoResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if not resultado:
+        raise HTTPException(status_code=401, detail="No existe un resultado para este reporte de medida")
+
+
+    if reporte_medida.texto is None and reporte_medida.numerico is None and reporte_medida.si_no is None and reporte_medida.id_opcion is None:
+        raise HTTPException(status_code=401, detail="Debe ingresar al menos un resultado")
+    
+    resultado.texto = reporte_medida.texto
+    resultado.numerico = reporte_medida.numerico
+    resultado.si_no = reporte_medida.si_no
+    resultado.id_opcion = reporte_medida.id_opcion
+    resultado.fecha_actualizacion = get_local_now_datetime()
+    resultado.actualizado_por = user.email
+    db.commit()
+    
+    return {
+        "message": "Se ha actualizado el resultado", 
+        "resultado": {
+            "id_reporte_medida": resultado.id_reporte_medida,
+            "texto": resultado.texto,
+            "numerico": resultado.numerico,
+            "si_no": resultado.si_no,
+            "id_opcion": resultado.id_opcion,
+            "fecha_creacion": resultado.fecha_creacion,
+            "creado_por": resultado.creado_por,
+            "fecha_actualizacion": resultado.fecha_actualizacion,
+            "actualizado_por": resultado.actualizado_por,
+            "fecha_eliminacion": resultado.fecha_eliminacion,
+            "eliminado_por": resultado.eliminado_por,
+        }
+    }
+
+@router.delete(
+    "/medidas/{id_reporte_medida}/resultados", 
+    summary="Elimina el resultado de una medida",
+)
+def delete_resultado(
+    db: SyncDbSessionDep,
+    id_reporte_medida: int,
+    user: UsuarioOut | None = Depends(get_user_from_token_data),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ORGANISMO_SECTORIAL, RolesEnum.ADMIN])),
+):
+    reporte = (
+        db.query(ReporteMedidaResponse)
+        .filter(
+            ReporteMedidaResponse.id_reporte_medida == id_reporte_medida, 
+            ReporteMedidaResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if not reporte:
+        raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
+    
+    resultado = (
+        db.query(ResultadoResponse)
+        .filter(
+            ResultadoResponse.id_reporte_medida == id_reporte_medida,
+            ResultadoResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if resultado:
+        resultado.fecha_eliminacion = get_local_now_datetime()
+        resultado.eliminado_por = user.email
+        db.commit()
+    return {"message": "Se eliminó resultado"}
+
 
 @router.delete(
     "/{id_reporte}",
@@ -123,28 +405,47 @@ def delete_reporte(
     id_reporte: int,
     db: SyncDbSessionDep,
     user: UsuarioOut | None = Depends(get_user_from_token_data),
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
-    reporte = db.query(Reporte).filter(Reporte.id_reporte == id_reporte).first()
+    '''
+    Elimina un reporte por su id.
+    
+    Para acceder a este recurso, el usuario debe contar con el rol Administrador.
+    '''
+    reporte = db.query(ReporteResponse).filter(ReporteResponse.id_reporte == id_reporte, ReporteResponse.eliminado_por == None).first()
     if reporte:
-        medida = db.query(Medida).filter(Medida.id_medida == reporte.id_medida).first()
-        if not medida:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No existe medida con ese id")
-        organismo_sectorial_medida = db.query(Usuario).filter(Usuario.id_usuario == user.id_usuario).join(OrganismoSectorialUsuario).filter(OrganismoSectorialUsuario.id_organismo_sectorial == medida.id_organismo_sectorial).first()
-        if not organismo_sectorial_medida:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="El usuario no pertenece al organismo sectorial que reportó la medida")
-        db.delete(reporte)
+        reporte_medidas = db.query(ReporteMedidaResponse).filter(ReporteMedidaResponse.id_reporte == id_reporte, ReporteMedidaResponse.eliminado_por == None).all()
+        for reporte_medida in reporte_medidas:
+            resultado = db.query(ResultadoResponse).filter(ResultadoResponse.id_reporte_medida == reporte_medida.id_reporte_medida, ResultadoResponse.eliminado_por == None).first()
+            if resultado:
+                resultado.fecha_eliminacion = get_local_now_datetime()
+                resultado.eliminado_por = user.email
+                db.flush()
+            reporte_medida.fecha_eliminacion = get_local_now_datetime()
+            reporte_medida.eliminado_por = user.email
+            db.flush()
+        
+        reporte.fecha_eliminacion = get_local_now_datetime()
+        reporte.eliminado_por = user.email
+        db.flush()
+
+        medio_verificacion = db.query(MedioVerificacionResponse).filter(MedioVerificacionResponse.id_reporte == id_reporte, MedioVerificacionResponse.eliminado_por == None).first()
+        if medio_verificacion:
+            medio_verificacion.fecha_eliminacion = get_local_now_datetime()
+            medio_verificacion.eliminado_por = user.email
+            db.flush()
+
         db.commit()
     return {"message": "Se ha eliminado el reporte"}
 
 @router.get(
-    "/{id_reporte}/archivo",
+    "/{id_reporte}/medio_verificacion",
     summary="Descargar archivo del medio de verificación",
 )
 async def download_verification_file(
     id_reporte: int,
     db: SyncDbSessionDep,
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.SMA, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.FISCALIZADOR, RolesEnum.ADMIN, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
     Descarga el archivo asociado al medio de verificación de un reporte.
@@ -152,7 +453,7 @@ async def download_verification_file(
     Argumentos:
     - id del reporte (int)
 
-    Requiere estar autenticado con rol de SMA u Organismo Sectorial para acceder a este recurso.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
     medio_verificacion = db.query(MedioVerificacion).filter(MedioVerificacion.id_reporte == id_reporte).first()
 

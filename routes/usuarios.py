@@ -106,6 +106,53 @@ def add_usuario(
     db.refresh(data)
     return {"message": "Se creó el usuario", "usuario": data}
 
+@router.put(
+    "/{id_usuario}",
+    summary="Actualiza un usuario por su id",
+    response_model_exclude_none=True,
+)
+def update_user(
+    id_usuario: int,
+    db: SyncDbSessionDep,
+    user_create: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    usuario: UsuarioCreate = Body(
+        openapi_examples={
+            "default": get_example("usuario_post"),
+        }
+    ),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
+):
+    """
+    Actualiza un usuario por su id.
+
+    Argumentos:
+    - nombre de la persona (str)
+    - apellido de la persona (str)
+    - email de la persona (str)
+
+    Devuelve mensaje de confirmación con el recurso actualizado.
+
+    Para acceder a este recurso, el usuario debe tener el rol: Administrador.
+    """
+
+    data = db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario == id_usuario, UsuarioResponse.eliminado_por == None).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="No existe usuario con ese id")
+    if db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario != id_usuario, UsuarioResponse.email.ilike(usuario.email)).first():
+        raise HTTPException(status_code=409, detail="Email ya existe")
+    data.nombre=usuario.nombre
+    data.apellido=usuario.apellido
+    data.email=usuario.email
+    data.activo=usuario.activo
+    data.id_rol=usuario.id_rol
+    data.id_organismo_sectorial=usuario.id_organismo_sectorial
+    data.fecha_actualizacion = get_local_now_datetime()
+    data.actualizado_por = user_create.email
+    db.commit()
+    return (
+        {"message": "Se actualizó usuario", "usuario": data}
+    )
+
 
 @router.delete(
     "/{id_usuario}",
