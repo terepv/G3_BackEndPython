@@ -7,7 +7,7 @@ from routes import (
     auth, comunas
     , frecuencias
     , opciones
-    # , opciones_medidas
+    , opciones_medidas
     , organismos_sectoriales, planes, planes_medidas
     , regiones, planes_comuna, roles, tipo_medidas, usuarios
     # , reportes, tipo_medidas, tipo_usuarios
@@ -42,7 +42,7 @@ app.include_router(frecuencias.router)
 app.include_router(tipo_medidas.router)
 app.include_router(tipos_datos.router)
 app.include_router(opciones.router)
-# app.include_router(opciones_medidas.router)
+app.include_router(opciones_medidas.router)
 # app.include_router(reportes.router)
 app.include_router(roles.router)
 

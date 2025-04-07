@@ -130,12 +130,14 @@ def update_frecuencia(
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
-    data = db.query(FrecuenciaResponse).filter(FrecuenciaResponse.id_frecuencia == id_frecuencia, FrecuenciaResponse.eliminado_por == None).first()
+    data = db.query(FrecuenciaResponse).filter(
+        FrecuenciaResponse.id_frecuencia == id_frecuencia,
+        FrecuenciaResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe frecuencia con ese id")
 
     if (db.query(FrecuenciaResponse)
-        .filter(FrecuenciaResponse.frecuencia.ilike(frecuencia.frecuencia), 
+        .filter(FrecuenciaResponse.frecuencia.ilike(frecuencia.frecuencia),
                 FrecuenciaResponse.id_frecuencia != id_frecuencia).first()):
         raise HTTPException(status_code=409, detail="Frecuencia ya existe")
 
