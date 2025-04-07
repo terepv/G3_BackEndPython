@@ -255,7 +255,7 @@ def add_resultado(
     ):
         raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
     
-    if db.query(ResultadoResponse).filter(ResultadoResponse.id_reporte_medida == id_reporte_medida).first():
+    if db.query(ResultadoResponse).filter(ResultadoResponse.id_reporte_medida == id_reporte_medida, ResultadoResponse.eliminado_por == None).first():
         raise HTTPException(status_code=401, detail="Ya existe un resultado para este reporte de medida")
 
     if reporte_medida.texto is None and reporte_medida.numerico is None and reporte_medida.si_no is None and reporte_medida.id_opcion is None:
