@@ -4,7 +4,7 @@ from db.models import Medida, MedidaResponse, Opcion, OpcionResponse, OpcionMedi
 from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from shared.enums import RolesEnum
 from shared.schemas import OpcionMedidaCreate, OpcionMedidaOut, UsuarioOut
-from shared.utils import get_example
+from shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 
@@ -52,6 +52,7 @@ def read_opciones_medidas(
 )
 def add_opcion_medida(
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     opcion_medida: OpcionMedidaCreate = Body(
         openapi_examples={
             "default": get_example("opcion_medida_post"),
@@ -80,26 +81,31 @@ def add_opcion_medida(
     )
     if not medida:
         raise HTTPException(status_code=404, detail="Medida no existe")
+    
+    if medida.tipo_dato.tipo_dato != "Selección":
+        raise HTTPException(status_code=400, detail="Solo se pueden registrar opciones para medidas con tipo de dato 'Selección'")
+
     if (
-        db.query(OpcionMedida)
+        db.query(OpcionMedidaResponse)
         .filter(
-            OpcionMedida.id_opcion == opcion_medida.id_opcion,
-            OpcionMedida.id_medida == opcion_medida.id_medida,
+            OpcionMedidaResponse.id_opcion == opcion_medida.id_opcion,
+            OpcionMedidaResponse.id_medida == opcion_medida.id_medida,
         )
         .first()
     ):
         raise HTTPException(status_code=409, detail="Opcion de medida ya existe")
 
-    opcion_medida = OpcionMedida(
-        id_opcion=opcion_medida.id_opcion, id_medida=opcion_medida.id_medida
+    opcion_medida = OpcionMedidaResponse(
+        id_opcion=opcion_medida.id_opcion, 
+        id_medida=opcion_medida.id_medida, 
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user.email
     )
     db.add(opcion_medida)
     db.commit()
     db.refresh(opcion_medida)
-    opcion_medida_out = OpcionMedidaOut(
-        id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida
-    )
-    return {"message": "Se creó opcion de medida", "opcion_medida": opcion_medida_out}
+#    opcion_medida_out = OpcionMedidaOut(id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida)
+    return {"message": "Se agregeó la opcion de medida", "opcion_medida": opcion_medida}
 
 
 @router.delete(
@@ -109,19 +115,24 @@ def add_opcion_medida(
 def delete_opcion_medida(
     id_opcion_medida: int,
     db: SyncDbSessionDep,
+    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN])),
 ):
     """
     Elimina una opcion de medida por su id.
 
+    Argumentos:
+    - id opcion medida (int)
+
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
 1    """
     opcion_medida = (
-        db.query(OpcionMedida)
-        .filter(OpcionMedida.id_opcion_medida == id_opcion_medida)
+        db.query(OpcionMedidaResponse)
+        .filter(OpcionMedidaResponse.id_opcion_medida == id_opcion_medida, OpcionMedidaResponse.eliminado_por==None)
         .first()
     )
     if opcion_medida:
-        db.delete(opcion_medida)
+        opcion_medida.eliminado_por = user.email
+        opcion_medida.fecha_eliminacion = get_local_now_datetime()
         db.commit()
     return {"message": "Se eliminó opcion de medida"}
