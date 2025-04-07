@@ -1,6 +1,4 @@
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from datetime import date, datetime
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -10,19 +8,81 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Integer,
     String,
     ForeignKey,
+    TIMESTAMP,
+    text
 )
+from shared.utils import get_local_now_datetime
 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass
 
-class TipoUsuario(Base):
-    __tablename__ = "tipo_usuario"
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tipo_usuario: Mapped[str] = mapped_column(String(50), nullable=False)
+class AuditMixin(MappedAsDataclass):
+    fecha_creacion: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        nullable=False,
+        default_factory=get_local_now_datetime,
+        server_default=text("(CURRENT_TIMESTAMP)"),
+        repr=False,
+    )
+    creado_por: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        repr=False,
+    )
+    fecha_actualizacion: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        repr=False,
+    )
+    actualizado_por: Mapped[str | None] = mapped_column(
+        String(255),
+        init=False,
+        repr=False,
+    )
+    fecha_eliminacion: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP,
+        init=False,
+        repr=False,
+    )
+    eliminado_por: Mapped[str | None] = mapped_column(
+        String(255),
+        init=False,
+        repr=False,
+    )
+
+    class Config:
+        orm_mode = True
+
+class Rol(Base):
+    __tablename__ = "rol"
+    id_rol: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    rol: Mapped[str] = mapped_column(String(50), nullable=False)
+
+class RolResponse(Rol, AuditMixin):
+    def __init__(self, rol: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.rol = rol
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class OrganismoSectorial(Base):
+    __tablename__ = "organismo_sectorial"
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+
+    def __init__(self, organismo_sectorial: str):
+        self.organismo_sectorial = organismo_sectorial
+
+class OrganismoSectorialResponse(OrganismoSectorial, AuditMixin):
+    def __init__(self, organismo_sectorial: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.organismo_sectorial = organismo_sectorial
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -30,38 +90,49 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     apellido: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    id_tipo_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_usuario.id_tipo_usuario"), nullable=False)
-    tipo_usuario: Mapped[TipoUsuario] = relationship(TipoUsuario)
+    password: Mapped[str] = mapped_column(String(100), nullable=False)
+    id_rol: Mapped[int] = mapped_column(Integer, ForeignKey("rol.id_rol"), nullable=False)
+    rol: Mapped[Rol] = relationship(Rol)
+    id_organismo_sectorial: Mapped[int | None] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=True)
+    organismo_sectorial: Mapped["OrganismoSectorial"] = relationship(OrganismoSectorial)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
     
-    def __init__(self, nombre: str, apellido: str, email: str, id_tipo_usuario: int, activo: bool = True):
+    def __init__(self, nombre: str, apellido: str, email: str, password: str, id_rol: int, id_organismo_sectorial: int | None, activo: bool = True):
         self.nombre = nombre
         self.apellido = apellido
         self.email = email
-        self.id_tipo_usuario = id_tipo_usuario
+        self.password = password
+        self.id_rol = id_rol
         self.activo = activo
+        self.id_organismo_sectorial = id_organismo_sectorial
 
-class UsuarioCreate(BaseModel):
-    nombre: str
-    apellido: str
-    email: str
-    activo: bool | None = True
-    id_tipo_usuario: int
-
-class UsuarioOut(BaseModel):
-    id_usuario: int
-    nombre: str
-    apellido: str
-    email: str
-    tipo_usuario: TipoUsuario
-    class Config:
-        from_attributes = True
+class UsuarioResponse(Usuario, AuditMixin):
+    def __init__(self, nombre: str, apellido: str, email:str, password:str,  activo:bool, id_rol:int, id_organismo_sectorial:int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.nombre = nombre
+        self.apellido = apellido
+        self.email = email
+        self.password = password
+        self.activo = activo
+        self.id_rol = id_rol
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Region(Base):
     __tablename__ = "region"
     id_region: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     region: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
 
+    class Config:
+        orm_mode = True
+
+class RegionResponse(Region, AuditMixin):
+    def __init__(self, region: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.region = region
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+    
 
 class Comuna(Base):
     __tablename__ = "comuna"
@@ -70,32 +141,35 @@ class Comuna(Base):
     id_region: Mapped[int] = mapped_column(Integer, ForeignKey("region.id_region"), nullable=False)
     region: Mapped[Region] = relationship(Region)
 
-class ComunaOut(BaseModel):
-    id_comuna: int
-    comuna: str
-    region: Region
-    class Config:
-        from_attributes = True
+class ComunaResponse(Comuna, AuditMixin):
+    def __init__(self, comuna: str, id_region: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.comuna = comuna
+        self.id_region = id_region
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Plan(Base):
     __tablename__ = "plan"
     id_plan: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     descripcion: Mapped[str] = mapped_column(String(100), nullable=False)
-    id_usuario_creacion: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
-    usuario_creacion: Mapped[Usuario] = relationship(Usuario)
-    fecha_publicacion: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now())
+    fecha_publicacion: Mapped[date] = mapped_column(Date, nullable=False, default=datetime.now())
 
-    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None, id_usuario_creacion: int = None):
+    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None):
         self.nombre = nombre
         self.descripcion = descripcion
         self.fecha_publicacion = fecha_publicacion or datetime.now()
-        self.id_usuario_creacion = id_usuario_creacion or 1
 
-class PlanCreate(BaseModel):
-    nombre: str = Field(..., min_length=3, max_length=100)
-    descripcion: str = Field(..., min_length=3, max_length=100)
-    fecha_publicacion: datetime
+    class Config:
+        orm_mode = True
+
+class PlanResponse(Plan, AuditMixin):
+    def __init__(self, nombre: str, descripcion: str, fecha_publicacion: datetime | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.nombre = nombre
+        self.descripcion = descripcion
+        self.fecha_publicacion = fecha_publicacion or datetime.now()
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class PlanComuna(Base):
     __tablename__ = "plan_comuna"
@@ -109,16 +183,12 @@ class PlanComuna(Base):
         self.id_plan = id_plan
         self.id_comuna = id_comuna
 
-class OrganismoSectorial(Base):
-    __tablename__ = "organismo_sectorial"
-    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    organismo_sectorial: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-
-    def __init__(self, organismo_sectorial: str):
-        self.organismo_sectorial = organismo_sectorial
-
-class OrganismoSectorialCreate(BaseModel):
-    organismo_sectorial: str = Field(..., min_length=3, max_length=100)
+class PlanComunaResponse(PlanComuna, AuditMixin):
+    def __init__(self, id_plan: int, id_comuna: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_plan = id_plan
+        self.id_comuna = id_comuna
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Frecuencia(Base):
     __tablename__ = "frecuencia"
@@ -128,8 +198,11 @@ class Frecuencia(Base):
     def __init__(self, frecuencia: str):
         self.frecuencia = frecuencia
 
-class FrecuenciaCreate(BaseModel):
-    frecuencia: str = Field(..., min_length=3, max_length=100)
+class FrecuenciaResponse(Frecuencia, AuditMixin):
+    def __init__(self, frecuencia: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.frecuencia = frecuencia
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class TipoMedida(Base):
     __tablename__ = "tipo_medida"
@@ -139,8 +212,11 @@ class TipoMedida(Base):
     def __init__(self, tipo_medida: str):
         self.tipo_medida = tipo_medida
 
-class TipoMedidaCreate(BaseModel):
-    tipo_medida: str = Field(..., min_length=3, max_length=100)
+class TipoMedidaResponse(TipoMedida, AuditMixin):
+    def __init__(self, tipo_medida: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.tipo_medida = tipo_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class TipoDato(Base):
     __tablename__ = "tipo_dato"
@@ -150,6 +226,12 @@ class TipoDato(Base):
     def __init__(self, tipo_dato: str):
         self.tipo_dato = tipo_dato
 
+class TipoDatoResponse(TipoDato, AuditMixin):
+    def __init__(self, tipo_dato: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.tipo_dato = tipo_dato
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class Opcion(Base):
     __tablename__ = "opcion"
     id_opcion: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -158,8 +240,11 @@ class Opcion(Base):
     def __init__(self, opcion: str):
         self.opcion = opcion
 
-class OpcionCreate(BaseModel):
-    opcion: str = Field(..., min_length=1, max_length=100)
+class OpcionResponse(Opcion, AuditMixin):
+    def __init__(self, opcion: str, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.opcion = opcion
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class Medida(Base):
     __tablename__ = "medida"
@@ -178,10 +263,9 @@ class Medida(Base):
     desc_medio_de_verificacion: Mapped[str] = mapped_column(String(100), nullable=False)
     id_tipo_dato: Mapped[int] = mapped_column(Integer, ForeignKey("tipo_dato.id_tipo_dato"), nullable=False)
     tipo_dato: Mapped[TipoDato] = relationship(TipoDato)
-    cron: Mapped[str | None] = mapped_column(String(100), nullable=True)
     reporte_unico: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, cron: str | None, reporte_unico: bool):
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, reporte_unico: bool):
         self.nombre_corto = nombre_corto
         self.indicador = indicador
         self.formula_calculo = formula_calculo
@@ -191,36 +275,22 @@ class Medida(Base):
         self.id_plan = id_plan
         self.desc_medio_de_verificacion = desc_medio_de_verificacion
         self.id_tipo_dato = id_tipo_dato
-        self.cron = cron
         self.reporte_unico = reporte_unico
 
-class MedidaCreate(BaseModel):
-    nombre_corto: str
-    indicador: str
-    formula_calculo: str
-    id_frecuencia: int
-    id_organismo_sectorial: int
-    id_tipo_medida: int
-    desc_medio_de_verificacion: str
-    id_tipo_dato: int
-    cron: str | None
-    reporte_unico: bool
-
-class MedidaOut(BaseModel):
-    id_medida: int
-    nombre_corto: str
-    indicador: str
-    formula_calculo: str
-    id_frecuencia: int
-    id_organismo_sectorial: int
-    id_tipo_medida: int
-    id_plan: int
-    desc_medio_de_verificacion: str
-    id_tipo_dato: int
-    cron: str | None
-    reporte_unico: bool
-    class Config:
-        from_attributes = True
+class MedidaResponse(Medida, AuditMixin):
+    def __init__(self, nombre_corto: str, indicador: str, formula_calculo: str, id_frecuencia: int, id_organismo_sectorial: int, id_tipo_medida: int, id_plan: int, desc_medio_de_verificacion: str, id_tipo_dato: int, reporte_unico: bool, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.nombre_corto = nombre_corto
+        self.indicador = indicador
+        self.formula_calculo = formula_calculo
+        self.id_frecuencia = id_frecuencia
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.id_tipo_medida = id_tipo_medida
+        self.id_plan = id_plan
+        self.desc_medio_de_verificacion = desc_medio_de_verificacion
+        self.id_tipo_dato = id_tipo_dato
+        self.reporte_unico = reporte_unico
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
 class OpcionMedida(Base):
     __tablename__ = "opcion_medida"
@@ -234,13 +304,85 @@ class OpcionMedida(Base):
         self.id_opcion = id_opcion
         self.id_medida = id_medida
 
-class OpcionMedidaCreate(BaseModel):
-    id_opcion: int
-    id_medida: int
+class OpcionMedidaResponse(OpcionMedida, AuditMixin):
+    def __init__(self, id_opcion: int, id_medida: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_opcion = id_opcion
+        self.id_medida = id_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
 
-class OpcionMedidaOut(BaseModel):
-    id_opcion_medida: int
-    opcion: Opcion
-    medida: MedidaOut
-    class Config:
-        from_attributes = True
+class Reporte(Base):
+    __tablename__ = "reporte"
+    id_reporte: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=False)
+    organismo_sectorial: Mapped[OrganismoSectorial] = relationship(OrganismoSectorial)
+    id_plan: Mapped[int] = mapped_column(Integer, ForeignKey("plan.id_plan"), nullable=False)
+    plan: Mapped[Plan] = relationship(Plan)
+
+class ReporteResponse(Reporte, AuditMixin):
+    def __init__(self, id_organismo_sectorial: int, id_plan: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_organismo_sectorial = id_organismo_sectorial
+        self.id_plan = id_plan
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class OrganismoSectorialUsuario(Base):
+    __tablename__ = "organismo_sectorial_usuario"
+    id_organismo_sectorial_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_organismo_sectorial: Mapped[int] = mapped_column(Integer, ForeignKey("organismo_sectorial.id_organismo_sectorial"), nullable=False)
+    id_usuario: Mapped[int] = mapped_column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    organismo_sectorial: Mapped[OrganismoSectorial] = relationship(OrganismoSectorial)
+    usuario: Mapped[Usuario] = relationship(Usuario)
+
+class MedioVerificacion(Base):
+    __tablename__ = "medio_verificacion"
+    id_reporte: Mapped[int] = mapped_column(Integer, ForeignKey("reporte.id_reporte"), primary_key=True, nullable=False)
+    reporte: Mapped[Reporte] = relationship(Reporte)
+    nombre_archivo: Mapped[str] = mapped_column(String(100), nullable=False)
+    archivo: Mapped[bytes] = mapped_column(String(100), nullable=False)
+    tamano: Mapped[int] = mapped_column(Integer, nullable=False)
+
+class MedioVerificacionResponse(MedioVerificacion, AuditMixin):
+    def __init__(self, id_reporte: int, nombre_archivo: str, archivo: bytes, tamano: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte = id_reporte
+        self.nombre_archivo = nombre_archivo
+        self.archivo = archivo
+        self.tamano = tamano
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class ReporteMedida(Base):
+    __tablename__ = "reporte_medida"
+    id_reporte_medida: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_reporte: Mapped[int] = mapped_column(Integer, ForeignKey("reporte.id_reporte"), nullable=False)
+    reporte: Mapped[Reporte] = relationship(Reporte)
+    id_medida: Mapped[int] = mapped_column(Integer, ForeignKey("medida.id_medida"), nullable=False)
+    medida: Mapped[Medida] = relationship(Medida)
+
+class ReporteMedidaResponse(ReporteMedida, AuditMixin):
+    def __init__(self, id_reporte: int, id_medida: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte = id_reporte
+        self.id_medida = id_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
+class Resultado(Base):
+    __tablename__ = "resultado"
+    id_reporte_medida: Mapped[int] = mapped_column(Integer, ForeignKey("reporte_medida.id_reporte_medida"), nullable=False, primary_key=True)
+    reporte_medida: Mapped[ReporteMedida] = relationship(ReporteMedida)
+    texto: Mapped[str] = mapped_column(String(100), nullable=False)
+    numerico: Mapped[float | None] = mapped_column(Integer, nullable=True)
+    si_no: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    id_opcion: Mapped[int | None] = mapped_column(Integer, ForeignKey("opcion.id_opcion"), nullable=True)
+    opcion: Mapped[Opcion] = relationship(Opcion)
+
+class ResultadoResponse(Resultado, AuditMixin):
+    def __init__(self, id_reporte_medida: int, texto: str, numerico: float | None = None, si_no: bool | None = None, id_opcion: int | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_reporte_medida = id_reporte_medida
+        self.texto = texto
+        self.numerico = numerico
+        self.si_no = si_no
+        self.id_opcion = id_opcion
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+    

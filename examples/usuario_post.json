@@ -2,6 +2,8 @@
     "nombre": "string",
     "apellido": "string",
     "email": "usuario@example.com",
+    "password": "string",
     "activo": true,
-    "id_tipo_usuario": 1
+    "id_rol": 1,
+    "id_organismo_sectorial":1
 }
