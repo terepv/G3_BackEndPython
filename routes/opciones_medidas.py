@@ -18,24 +18,23 @@ router = APIRouter(prefix="/opciones_medidas", tags=["Opciones Medidas"])
 def read_opciones_medidas(
     db: SyncDbSessionDep,
     user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
-    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.ORGANISMO_SECTORIAL])),
+    _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ADMIN, RolesEnum.FISCALIZADOR, RolesEnum.ORGANISMO_SECTORIAL])),
 ):
     """
-    Si el usuario cuenta con rol administrador, devuelve una lista con todas las opciones de medidas.
-    Si el usuario cuenta con rol de organismo sectorial, devuelve lista de opciones de medidas que le correspondan a ese organismo sectorial.
+    Si el rol del usuario es administrador o fiscaliazdor, devuelve una lista con todas las opciones de medidas.
+    Si el rol es organismo sectorial, devuelve lista de opciones de medidas que le correspondan a ese organismo sectorial.
 
-    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Organismo Sectorial.
+    Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador, Organismo Sectorial.
     """
     if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
         opciones_medidas = (
             db.query(OpcionMedidaResponse)
-            .join(OpcionResponse, OpcionResponse.id_opcion == OpcionMedidaResponse.id_opcion)
-            .join(MedidaResponse, MedidaResponse.id_medida == OpcionMedidaResponse.id_medida)
+            .join(Medida, Medida.id_medida == OpcionMedidaResponse.id_medida)
             .filter(
                 OpcionResponse.eliminado_por == None,
                 MedidaResponse.eliminado_por == None,
                 OpcionMedidaResponse.eliminado_por == None,
-                MedidaResponse.organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
+                MedidaResponse.id_organismo_sectorial == user.organismo_sectorial.id_organismo_sectorial
             ).all()
         )
     else:
@@ -43,7 +42,7 @@ def read_opciones_medidas(
             OpcionMedidaResponse).filter(
                 OpcionMedidaResponse.eliminado_por == None
             ).all()
-        return opciones_medidas
+    return opciones_medidas
 
 
 @router.post(
