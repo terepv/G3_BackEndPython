@@ -304,6 +304,13 @@ class OpcionMedida(Base):
         self.id_opcion = id_opcion
         self.id_medida = id_medida
 
+class OpcionMedidaResponse(OpcionMedida, AuditMixin):
+    def __init__(self, id_opcion: int, id_medida: int, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+        self.id_opcion = id_opcion
+        self.id_medida = id_medida
+        self.fecha_creacion = fecha_creacion
+        self.creado_por = creado_por
+
 class Reporte(Base):
     __tablename__ = "reporte"
     id_reporte: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
