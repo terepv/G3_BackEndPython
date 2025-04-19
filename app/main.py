@@ -12,12 +12,15 @@ from app.routes import (
     , regiones, planes_comuna, roles, tipo_medidas, usuarios, reportes
     , tipos_datos
 )
-from app.shared.utils import get_local_now_datetime
+from app.shared.utils import get_version_from_pyproject, get_local_now_datetime
+
+APP_VERSION = get_version_from_pyproject()
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["5/minute"])
 app = FastAPI(
     title="REST API REPORTES PPDA",
     description=f"Last deployment: {get_local_now_datetime()}",
+    version=APP_VERSION,
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

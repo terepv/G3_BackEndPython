@@ -5,9 +5,18 @@ import pytz
 from datetime import datetime, timedelta, timezone
 from fastapi.openapi.models import Example
 from jose import jwt
+import toml
 
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, APP_TIMEZONE_LOCAL, REFRESH_TOKEN_EXPIRE_DAYS, TOKEN_ALGORITHM, TOKEN_SECRET_KEY
 
+
+def get_version_from_pyproject(path: str = "pyproject.toml") -> str:
+    try:
+        print(f"Loading pyproject from {path}")
+        pyproject = toml.load(path)
+        return pyproject["tool"]["poetry"]["version"]
+    except FileNotFoundError:
+        return "NOVERSION"
 
 def get_local_now_datetime() -> datetime:
     """

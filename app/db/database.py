@@ -3,19 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.config import (
-    DB_NAME,
-    DB_USER,
-    DB_PASSWORD,
-    DB_HOST,
-    DB_PORT
-)
-
-db_connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-db_connection_string_async = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+from app.config import DB_CONNECTION_STRING, DB_CONNECTION_STRING_ASYNC
 
 engine = create_engine(
-    db_connection_string,
+    DB_CONNECTION_STRING,
     pool_size=5,
     pool_pre_ping=True,
     max_overflow=0,
@@ -25,7 +16,7 @@ engine = create_engine(
 SessionDep = sessionmaker(autoflush=False, autocommit=False, bind=engine)
 
 engine_async = create_async_engine(
-    db_connection_string_async,
+    DB_CONNECTION_STRING_ASYNC,
     pool_size=5,
     pool_pre_ping=True,
     max_overflow=0,
