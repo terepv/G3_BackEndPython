@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from config import (
+from app.config import (
     DB_NAME,
     DB_USER,
     DB_PASSWORD,

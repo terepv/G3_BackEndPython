@@ -1,12 +1,10 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from db.models import Usuario, UsuarioResponse
-from shared.dependencies import AsyncDbSessionDep, RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.schemas import UsuarioCreate, UsuarioOut
-from shared.utils import get_example, get_password_hash, get_local_now_datetime
-from shared.enums import RolesEnum
+from app.db.models import Usuario, UsuarioResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.schemas import UsuarioCreate, UsuarioOut
+from app.shared.utils import get_example, get_password_hash, get_local_now_datetime
+from app.shared.enums import RolesEnum
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 

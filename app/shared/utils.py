@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi.openapi.models import Example
 from jose import jwt
 
-from config import ACCESS_TOKEN_EXPIRE_MINUTES, APP_TIMEZONE_LOCAL, REFRESH_TOKEN_EXPIRE_DAYS, TOKEN_ALGORITHM, TOKEN_SECRET_KEY
+from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, APP_TIMEZONE_LOCAL, REFRESH_TOKEN_EXPIRE_DAYS, TOKEN_ALGORITHM, TOKEN_SECRET_KEY
 
 
 def get_local_now_datetime() -> datetime:
@@ -26,12 +26,11 @@ def get_example(filename: str) -> Example:
     :return: El contenido del archivo en formato Example de FastAPI.
     :raises FileNotFoundError: Si el archivo no existe.
     """
-    api_examples_path = pathlib.Path(__file__).parent.parent / "examples"
+    api_examples_path = pathlib.Path(__file__).parent.parent.parent / "api" / "examples"
     filepath = api_examples_path / f"{filename}.json"
-    if not filepath.exists():
-        raise FileNotFoundError(f"Example file not found: {filepath}")
-    with open(filepath) as f:
-        return Example(value=json.load(f))
+    if filepath.exists():
+        with open(filepath) as f:
+            return Example(value=json.load(f))
     
 example_data = {}
 

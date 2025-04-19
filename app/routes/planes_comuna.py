@@ -1,10 +1,10 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
-from db.models import Comuna, MedidaResponse, Plan, PlanComunaResponse, PlanResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.schemas import UsuarioOut
-from shared.utils import get_local_now_datetime
+from app.db.models import Comuna, MedidaResponse, Plan, PlanComunaResponse, PlanResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.schemas import UsuarioOut
+from app.shared.utils import get_local_now_datetime
 
 router = APIRouter(prefix="/planes/{id_plan}/comunas", tags=["Planes - Comunas"])
 

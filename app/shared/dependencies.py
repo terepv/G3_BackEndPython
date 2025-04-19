@@ -5,11 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
 
-# from config import TOKEN_ALGORITHM, TOKEN_SECRET_KEY
-from config import TOKEN_ALGORITHM, TOKEN_SECRET_KEY
-from db.database import SessionDep, SessionDepAsync
-from db.models import Usuario
-from shared.schemas import UsuarioOut
+from app.config import TOKEN_ALGORITHM, TOKEN_SECRET_KEY
+from app.db.database import SessionDep, SessionDepAsync
+from app.shared.schemas import UsuarioOut
 
 def get_db():
     with SessionDep() as db:

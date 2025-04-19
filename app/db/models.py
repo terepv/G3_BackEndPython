@@ -9,14 +9,13 @@ from sqlalchemy.orm import (
 from sqlalchemy import (
     Boolean,
     Date,
-    DateTime,
     Integer,
     String,
     ForeignKey,
     TIMESTAMP,
     text
 )
-from shared.utils import get_local_now_datetime
+from app.shared.utils import get_local_now_datetime
 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass

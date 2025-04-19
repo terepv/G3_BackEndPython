@@ -1,10 +1,10 @@
 from typing_extensions import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import TipoDato, TipoDatoResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.utils import get_example, get_local_now_datetime
-from shared.schemas import TipoDatoCreate, UsuarioOut
+from app.db.models import TipoDatoResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.utils import get_example, get_local_now_datetime
+from app.shared.schemas import TipoDatoCreate, UsuarioOut
 
 router = APIRouter(prefix="/tipos_datos", tags=["Tipos de Datos"])
 

@@ -1,14 +1,14 @@
 from io import BytesIO
-from operator import and_, or_
+from operator import and_
 from typing import Annotated
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from db.models import Medida, MedidaResponse, MedioVerificacion, MedioVerificacionResponse, OrganismoSectorial, OrganismoSectorialResponse, OrganismoSectorialUsuario, PlanResponse, ReporteMedidaResponse, ReporteResponse, ResultadoResponse, Usuario
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.schemas import MedioVerificacionOut, ReporteCreate, ReporteMedidaCreate, ReporteOut, ResultadoCreate, UsuarioOut
-from shared.utils import get_example, get_local_now_datetime
+from app.db.models import MedidaResponse, MedioVerificacion, MedioVerificacionResponse, PlanResponse, ReporteMedidaResponse, ReporteResponse, ResultadoResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.schemas import ResultadoCreate, UsuarioOut
+from app.shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 

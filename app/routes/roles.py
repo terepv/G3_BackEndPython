@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from db.models import RolResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep
-from shared.enums import RolesEnum
+from app.db.models import RolResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep
+from app.shared.enums import RolesEnum
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
 

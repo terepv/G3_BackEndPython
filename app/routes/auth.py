@@ -1,12 +1,11 @@
-from datetime import timedelta
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from db.models import OrganismoSectorial, Usuario
-from shared.dependencies import SyncDbSessionDep, get_data_from_token, get_user_from_token_data
-from shared.schemas import UsuarioOut
-from shared.utils import create_access_token, create_refresh_token, get_local_now_datetime, verify_password
+from app.db.models import Usuario
+from app.shared.dependencies import SyncDbSessionDep, get_data_from_token, get_user_from_token_data
+from app.shared.schemas import UsuarioOut
+from app.shared.utils import create_access_token, create_refresh_token, get_local_now_datetime, verify_password
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])

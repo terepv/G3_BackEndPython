@@ -1,11 +1,10 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from sqlalchemy import select
-from db.models import OpcionResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.schemas import OpcionCreate, UsuarioOut
-from shared.utils import get_example, get_local_now_datetime
+from app.db.models import OpcionResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.schemas import OpcionCreate, UsuarioOut
+from app.shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/opciones", tags=["Opciones"])
 

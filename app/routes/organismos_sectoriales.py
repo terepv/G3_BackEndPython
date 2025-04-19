@@ -1,10 +1,10 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import OrganismoSectorialResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.schemas import OrganismoSectorialCreate, UsuarioOut
-from shared.utils import get_example, get_local_now_datetime
+from app.db.models import OrganismoSectorialResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.schemas import OrganismoSectorialCreate, UsuarioOut
+from app.shared.utils import get_example, get_local_now_datetime
 
 router = APIRouter(prefix="/organismos_sectoriales", tags=["Organismos Sectoriales"])
 

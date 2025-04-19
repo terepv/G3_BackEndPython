@@ -3,7 +3,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
-from routes import (
+from app.routes import (
     auth, comunas
     , frecuencias
     , opciones
@@ -12,7 +12,7 @@ from routes import (
     , regiones, planes_comuna, roles, tipo_medidas, usuarios, reportes
     , tipos_datos
 )
-from shared.utils import get_local_now_datetime
+from app.shared.utils import get_local_now_datetime
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["5/minute"])
 app = FastAPI(

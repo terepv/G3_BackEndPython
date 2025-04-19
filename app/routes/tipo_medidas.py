@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Body, Depends, HTTPException
-from db.models import TipoMedida, TipoMedidaResponse
-from shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
-from shared.enums import RolesEnum
-from shared.schemas import TipoMedidaCreate, UsuarioOut
-from shared.utils import get_example, get_local_now_datetime
+from app.db.models import TipoMedida, TipoMedidaResponse
+from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
+from app.shared.enums import RolesEnum
+from app.shared.schemas import TipoMedidaCreate, UsuarioOut
+from app.shared.utils import get_example, get_local_now_datetime
 from typing_extensions import Annotated
 
 router = APIRouter(prefix="/tipo_medidas", tags=["Tipo Medidas"])
