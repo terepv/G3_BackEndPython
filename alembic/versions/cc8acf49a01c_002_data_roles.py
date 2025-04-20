@@ -22,8 +22,8 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.execute("DROP TRIGGER IF EXISTS trg_validar_usuarios_auditoria ON public.rol;")
     op.execute('''INSERT INTO public.rol (rol,fecha_creacion,creado_por,fecha_actualizacion,actualizado_por,fecha_eliminacion,eliminado_por) VALUES
-	 ('Fiscalizador','2025-04-04 22:31:14.939052','hpinilla@gmail.com',NULL,NULL,NULL,NULL),
 	 ('Administrador','2025-04-04 22:31:14.939052','hpinilla@gmail.com',NULL,NULL,NULL,NULL),
+     ('Fiscalizador','2025-04-04 22:31:14.939052','hpinilla@gmail.com',NULL,NULL,NULL,NULL),
 	 ('Organismo Sectorial','2025-04-04 22:31:14.939052','hpinilla@gmail.com',NULL,NULL,NULL,NULL);
 ''')
     op.execute("CREATE TRIGGER trg_validar_usuarios_auditoria BEFORE INSERT OR UPDATE ON public.rol FOR EACH ROW EXECUTE FUNCTION public.validar_usuarios_auditoria();")

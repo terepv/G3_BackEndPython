@@ -12,7 +12,7 @@ from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, APP_TIMEZONE_LOCAL, REFRESH_
 
 def get_version_from_pyproject(path: str = "pyproject.toml") -> str:
     try:
-        print(f"Loading pyproject from {path}")
+        # print(f"Loading pyproject from {path}")
         pyproject = toml.load(path)
         return pyproject["tool"]["poetry"]["version"]
     except FileNotFoundError:
