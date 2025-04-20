@@ -78,6 +78,6 @@ def get_refresh_token(
     response_model_exclude_none=True,
 )
 def read_users_me(
-    user: Annotated[UsuarioOut, Depends(get_user_from_token_data)],
+    data: Annotated[dict, Depends(get_data_from_token)],
 ):
-    return {"usuario_autenticado": user}
+    return data
