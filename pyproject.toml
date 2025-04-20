@@ -24,7 +24,12 @@ toml = "^0.10.2"
 [tool.poetry.group.dev.dependencies]
 alembic = "^1.15.2"
 sqlacodegen = "^3.0.0"
+pytest = "^8.3.5"
+httpx = "^0.28.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
