@@ -110,7 +110,7 @@ def add_opcion_medida(
     db.commit()
     db.refresh(opcion_medida)
 #    opcion_medida_out = OpcionMedidaOut(id_opcion_medida=opcion_medida.id_opcion_medida, opcion=opcion, medida=medida)
-    return {"message": "Se agregeó la opcion de medida", "opcion_medida": opcion_medida}
+    return {"message": "Se agregó la opcion de medida", "opcion_medida": opcion_medida}
 
 
 @router.delete(
