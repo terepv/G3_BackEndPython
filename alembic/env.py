@@ -21,7 +21,7 @@ DB_PORT = env.get("DB_PORT")
 DB_NAME = env.get("DB_DBNAME")
 
 # DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
 # print(DATABASE_URL)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

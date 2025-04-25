@@ -1,9 +1,14 @@
-from fastapi.testclient import TestClient
-from app.main import app
+from utils.conftest import client
 
-client = TestClient(app)
+class TestMain():
+    def test_root_response_api_is_running(self, client):
+        response = client.get("/")
+        assert response.status_code == 200
+        assert response.json() == {"message": "API is running"}
 
-def test_root_response_api_is_running():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "API is running"}
+    def test_rate_limit_exceeded(self, client):
+        for _ in range(5):
+            response = client.get("/")
+            assert response.status_code == 200
+        response = client.get("/")
+        assert response.status_code == 429
