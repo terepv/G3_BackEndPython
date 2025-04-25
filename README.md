@@ -186,5 +186,3 @@ Contraseña
     *  🗑️ `DELETE`: Eliminar medios de verificación (*solo los propios*).
 
 *   ❌Nota: No tiene acceso a la gestión de Usuarios ni a la gestión directa de Regiones, Comunas, Frecuencias, Tipos, Opciones o Medidas más allá de la lectura filtrada.
-
-cambio de prueba
