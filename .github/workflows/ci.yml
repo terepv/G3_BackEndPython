@@ -1,0 +1,38 @@
+name: FastAPI CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_TIMEZONE_LOCAL: ${{ secrets.APP_TIMEZONE_LOCAL }}
+      DB_DBNAME: ${{ secrets.DB_DBNAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      TOKEN_ALGORITHM: ${{ secrets.TOKEN_ALGORITHM }}
+      TOKEN_SECRET_KEY: ${{ secrets.TOKEN_SECRET_KEY }}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.REFRESH_TOKEN_EXPIRE_DAYS }}
+      DEBUG: ${{ secrets.DEBUG }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Apply migrations
+        run: |
+          alembic upgrade head
+      - name: Run tests
+        run: |
+          pytest
