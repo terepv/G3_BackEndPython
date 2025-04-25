@@ -8,7 +8,7 @@
         "request": "launch",
         "module": "uvicorn",
         "args": [
-          "main:app",  // Change 'main' to your actual module name
+          "app.main:app",  // Change 'main' to your actual module name
           "--host", "127.0.0.1",
           "--port", "8000",
           "--reload"
