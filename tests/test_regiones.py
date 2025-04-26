@@ -2,7 +2,6 @@ import pytest
 from base64 import b64encode
 from utils.conftest import (
     create_and_delete_test_users, client, email_admin, password_admin,
-    email_organismo_sectorial, password_organismo_sectorial
 )
 
 def get_basic_auth_header(username: str, password: str):
@@ -12,8 +11,13 @@ def get_basic_auth_header(username: str, password: str):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("create_and_delete_test_users")
-class TestRegionesEndpoints():
-    async def test_get_regiones_success(self, client):
+class TestRegionesEndpoint():
+    async def test_get_regiones(self, client):
         headers = get_basic_auth_header(email_admin, password_admin)
-        regiones = client.get("/regiones", headers=headers)
-        assert regiones.status_code == 200
+        response = client.post("/auth/token", headers=headers)
+        data = response.json()
+        access_token = data["access_token"]
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = client.get("/regiones", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
