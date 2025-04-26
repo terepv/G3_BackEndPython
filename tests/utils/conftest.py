@@ -1,8 +1,9 @@
+from base64 import b64encode
 from datetime import datetime
 import pytest_asyncio
 from sqlalchemy import select
 from app.db.database import SessionDepAsync
-from app.db.models import OrganismoSectorialResponse, Rol, UsuarioResponse
+from app.db.models import OrganismoSectorialResponse, Rol, TipoMedida, TipoMedidaResponse, UsuarioResponse
 from app.shared.utils import get_password_hash
 
 creado_por = "hpinilla@gmail.com"
@@ -14,6 +15,11 @@ email_organismo_sectorial = "organismo_sectorial@example.com"
 password_organismo_sectorial = "organismo_sectorial_password"
 organismo_sectorial_name = "OS Test"
 
+def get_basic_auth_header(username: str, password: str):
+    credentials = f"{username}:{password}"
+    encoded_credentials = b64encode(credentials.encode()).decode()
+    return {"Authorization": f"Basic {encoded_credentials}"}
+
 @pytest_asyncio.fixture(scope="function")
 def client():
     from app.main import app
@@ -22,18 +28,18 @@ def client():
     client = TestClient(app)
     yield client
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(scope="session")
 async def create_and_delete_test_users():
     #setup
     async with SessionDepAsync() as db:
-        async def get_rol_by_name(rol_name):
+        async def get_rol_by_name(rol_name) -> Rol:
             result = await db.execute(select(Rol).filter(Rol.rol == rol_name))
             rol = result.scalars().first()
             if not rol:
                 raise Exception(f"Rol '{rol_name}' no encontrado")
             return rol
         
-        async def create_organismo_sectorial(organismo_sectorial):
+        async def create_organismo_sectorial(organismo_sectorial) -> OrganismoSectorialResponse:
             new_organismo_sectorial = OrganismoSectorialResponse(
                 organismo_sectorial=organismo_sectorial,
                 fecha_creacion=datetime.now(),
@@ -95,3 +101,32 @@ async def create_and_delete_test_users():
             await db.delete(organismo_sectorial)
 
         await db.commit()
+
+
+tipo_medida_name = "Tipo Medida Test"
+
+@pytest_asyncio.fixture(scope="class")
+async def delete_tipo_medida_if_exists():
+    yield
+    async with SessionDepAsync() as db:
+        result = await db.execute(select(TipoMedida).filter(TipoMedida.tipo_medida == tipo_medida_name))
+        tipo_medida = result.scalars().first()
+        if tipo_medida:
+            await db.delete(tipo_medida)
+            await db.commit()
+
+@pytest_asyncio.fixture(scope="function")
+async def tipo_medida_test():
+    async with SessionDepAsync() as db:
+        result = await db.execute(select(TipoMedida).filter(TipoMedida.tipo_medida == tipo_medida_name))
+        tipo_medida = result.scalars().first()
+        if not tipo_medida:
+            tipo_medida = TipoMedidaResponse(
+            tipo_medida=tipo_medida_name,
+            fecha_creacion=datetime.now(),
+            creado_por=creado_por,
+            )
+            db.add(tipo_medida)
+            await db.commit()
+            await db.refresh(tipo_medida)
+    yield tipo_medida
