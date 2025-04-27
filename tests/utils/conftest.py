@@ -22,7 +22,7 @@ def client():
     client = TestClient(app)
     yield client
 
-@pytest_asyncio.fixture(scope="class")
+@pytest_asyncio.fixture(scope="session")
 async def create_and_delete_test_users():
     #setup
     async with SessionDepAsync() as db:
