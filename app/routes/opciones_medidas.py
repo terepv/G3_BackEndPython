@@ -29,7 +29,8 @@ def read_opciones_medidas(
     if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
         opciones_medidas = (
             db.query(OpcionMedidaResponse)
-            .join(Medida, Medida.id_medida == OpcionMedidaResponse.id_medida)
+            .join(MedidaResponse, MedidaResponse.id_medida == OpcionMedidaResponse.id_medida)
+            .join(OpcionResponse, OpcionResponse.id_opcion == OpcionMedidaResponse.id_opcion)
             .filter(
                 OpcionResponse.eliminado_por == None,
                 MedidaResponse.eliminado_por == None,
@@ -38,10 +39,11 @@ def read_opciones_medidas(
             ).all()
         )
     else:
-        opciones_medidas = db.query(
-            OpcionMedidaResponse).filter(
-                OpcionMedidaResponse.eliminado_por == None
-            ).all()
+        opciones_medidas = (
+            db.query(OpcionMedidaResponse)
+            .filter(OpcionMedidaResponse.eliminado_por == None)
+            .all()
+        )
     return opciones_medidas
 
 

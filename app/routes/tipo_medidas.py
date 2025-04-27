@@ -22,7 +22,7 @@ def read_tipo_medidas(
 
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    tipo_medidas = db.query(TipoMedida).all()
+    tipo_medidas = db.query(TipoMedidaResponse).filter(TipoMedidaResponse.eliminado_por == None).all()
     return tipo_medidas
 
 
@@ -42,7 +42,7 @@ def read_tipo_medida(
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
     tipo_medida = (
-        db.query(TipoMedida).filter(TipoMedida.id_tipo_medida == id_tipo_medida).first()
+        db.query(TipoMedidaResponse).filter(TipoMedidaResponse.id_tipo_medida == id_tipo_medida, TipoMedidaResponse.eliminado_por == None).first()
     )
     if not tipo_medida:
         raise HTTPException(
@@ -80,7 +80,8 @@ def add_tipo_medida(
 
     if (
         db.query(TipoMedidaResponse)
-        .filter(TipoMedidaResponse.tipo_medida.ilike(nombre_tipo_medida))
+        .filter(TipoMedidaResponse.tipo_medida.ilike(nombre_tipo_medida),
+                TipoMedidaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=409, detail="Tipo de medida ya existe")
@@ -96,16 +97,16 @@ def add_tipo_medida(
         )
 
     data = TipoMedidaResponse(
-    tipo_medida=nombre_tipo_medida,
-    fecha_creacion=get_local_now_datetime(),
-    creado_por=user.email,
+        tipo_medida=nombre_tipo_medida,
+        fecha_creacion=get_local_now_datetime(),
+        creado_por=user.email,
     )
 
     db.add(data)
     db.commit()
     db.refresh(data)
 
-    return {"message": "Se creó tipo de medida", "tipo de medida": data}
+    return {"message": "Se creó tipo de medida", "Tipo de medida": data}
 
 
 @router.delete(
@@ -130,7 +131,6 @@ def delete_tipo_medida(
     if tipo_medida:
         tipo_medida.fecha_eliminacion = get_local_now_datetime()
         tipo_medida.eliminado_por = user.email
-        db.delete(tipo_medida)
         db.commit()
 
     return {"message": "Se eliminó tipo de medida"}
@@ -166,7 +166,7 @@ def update_tipo_medida(
     data = db.query(TipoMedidaResponse).filter(TipoMedidaResponse.id_tipo_medida == id_tipo_medida, TipoMedidaResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe tipo de medida con ese id")
-    if db.query(TipoMedidaResponse).filter(TipoMedidaResponse.id_tipo_medida != id_tipo_medida, TipoMedidaResponse.tipo_medida.ilike(tipo_medida.tipo_medida)).first():
+    if db.query(TipoMedidaResponse).filter(TipoMedidaResponse.id_tipo_medida != id_tipo_medida, TipoMedidaResponse.tipo_medida.ilike(tipo_medida.tipo_medida), TipoMedidaResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Tipo de medida ya existe")
     data.tipo_medida = tipo_medida.tipo_medida
     data.fecha_actualizacion = get_local_now_datetime()
