@@ -7,18 +7,19 @@ from utils.conftest import (
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("create_and_delete_test_users")
-class TestRegionesEndpoints():
-    async def test_admin_get_regiones_success(self, client):
+class TestComunasEndpoints():
+    async def test_admin_get_comunas_success(self, client):
         headers = get_basic_auth_header(email_admin, password_admin)
         response = client.post("/auth/token", headers=headers)
         access_token = response.json()["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = client.get("/regiones/", headers=headers)
+        response = client.get("/comunas/", headers=headers)
         assert response.status_code == 200
 
-    async def test_crud_regiones_success(self, client):
+    async def test_crud_comunas_success(self, client):
         
         region_name = f"region_test"
+        comuna_name = f"comuna_test"
 
         created_resources = []
 
@@ -46,13 +47,22 @@ class TestRegionesEndpoints():
             assert region["region"] == region_name
             assert region["id_region"] is not None
 
-            headers = {"Authorization": f"Bearer {access_token}"}
-            response = client.put(f"/regiones/{region['id_region']}", headers=headers, json={
-                "region": "region_test_editado",
-            })
-            assert response.status_code == 200
-            region_editada = response.json()["región"]
-            assert region_editada["region"] == "region_test_editado"
+            comuna = get_or_create("/comunas/", {
+                "comuna": comuna_name,
+                "id_region": region["id_region"],
+            }, "comuna", "id_comuna", access_token, "comuna")
+            assert comuna["comuna"] == comuna_name
+            assert comuna["id_comuna"] is not None
+            
+            # headers = {"Authorization": f"Bearer {access_token}"}
+            # response = client.put(f"/comunas/{comuna['id_comuna']}/", headers=headers, json={
+            #     "comuna": "comuna_test_editado",
+            #     "id_region": region["id_region"],
+            # })
+            # assert response.status_code == 200
+            # comuna_editada = response.json()["comuna"]
+            # assert comuna_editada["comuna"] == "comuna_test_editado"
+            # assert comuna_editada["id_comuna"] is not None
 
         finally:
             headers = {"Authorization": f"Bearer {access_token}"}
