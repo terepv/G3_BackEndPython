@@ -119,7 +119,7 @@ def update_plan(
     data = db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe plan con ese id")
-    if db.query(PlanResponse).filter(PlanResponse.id_plan != id_plan, PlanResponse.nombre.ilike(plan.nombre)).first():
+    if db.query(PlanResponse).filter(PlanResponse.id_plan != id_plan, PlanResponse.nombre.ilike(plan.nombre), PlanResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Plan ya existe")
     data.nombre = plan.nombre
     data.descripcion = plan.descripcion
