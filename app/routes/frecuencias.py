@@ -96,7 +96,7 @@ def add_frecuencia(
         frecuencia=nombre_frecuencia,
         fecha_creacion=get_local_now_datetime(),
         creado_por=user.email,
-        )
+    )
     db.add(frecuencia)
     db.commit()
     db.refresh(frecuencia)
@@ -105,7 +105,6 @@ def add_frecuencia(
 @router.put(
         "/{id_frecuencia}",
         summary="Actualiza una frecuencia por su id",
-        status_code=201,
         response_model_exclude_none=True
 )
 def update_frecuencia(
@@ -138,7 +137,8 @@ def update_frecuencia(
 
     if (db.query(FrecuenciaResponse)
         .filter(FrecuenciaResponse.frecuencia.ilike(frecuencia.frecuencia),
-                FrecuenciaResponse.id_frecuencia != id_frecuencia).first()):
+                FrecuenciaResponse.id_frecuencia != id_frecuencia,
+                FrecuenciaResponse.eliminado_por == None).first()):
         raise HTTPException(status_code=409, detail="Frecuencia ya existe")
 
     data.frecuencia = frecuencia.frecuencia

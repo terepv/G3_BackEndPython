@@ -1,6 +1,6 @@
 from typing_extensions import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from app.db.models import ComunaResponse, Region
+from app.db.models import ComunaResponse, RegionResponse
 from app.shared.enums import RolesEnum
 from app.shared.schemas import ComunaCreate, ComunaOut, UsuarioOut
 from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
@@ -24,7 +24,7 @@ def read_comunas(
 
     Para acceder a este recurso, el usuario debe contar con alguno de los siguientes roles: Administrador, Fiscalizador u Organismo Sectorial.
     """
-    comunas = db.query(ComunaResponse).filter(ComunaResponse.eliminado_por == None).join(Region).all()
+    comunas = db.query(ComunaResponse).filter(ComunaResponse.eliminado_por == None).join(RegionResponse).all()
     return comunas
 
 
@@ -79,10 +79,10 @@ def add_comuna(
 
     Para acceder a este recurso, el usuario debe tener el rol: Administrador.
     """
-    if db.query(ComunaResponse).filter(ComunaResponse.comuna.ilike(comuna.comuna)).first():
+    if db.query(ComunaResponse).filter(ComunaResponse.comuna.ilike(comuna.comuna), ComunaResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Comuna ya existe")
     
-    if not db.query(Region).filter(Region.id_region == comuna.id_region).first():
+    if not db.query(RegionResponse).filter(RegionResponse.id_region == comuna.id_region, RegionResponse.eliminado_por == None).first():
         raise HTTPException(status_code=404, detail="No existe región con ese id")
 
     data = ComunaResponse(
@@ -101,7 +101,6 @@ def add_comuna(
 @router.put(
     "/{comuna_id}", 
     summary="Actualiza una comuna por su id", 
-    status_code=201,
     response_model_exclude_none=True,
 )
 def update_comuna(
@@ -131,20 +130,18 @@ def update_comuna(
     data = db.query(ComunaResponse).filter(ComunaResponse.id_comuna == id_comuna, ComunaResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe comuna con ese id")
-
-    if db.query(ComunaResponse).filter(ComunaResponse.comuna.ilike(comuna.comuna), ComunaResponse.id_comuna != id_comuna).first():
+    if db.query(ComunaResponse).filter(ComunaResponse.id_comuna != id_comuna, ComunaResponse.comuna.ilike(comuna.comuna), ComunaResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Comuna ya existe")
-    
-    if not db.query(Region).filter(Region.id_region == comuna.id_region).first():
+    if not db.query(RegionResponse).filter(RegionResponse.id_region == comuna.id_region, RegionResponse.eliminado_por == None).first():
         raise HTTPException(status_code=404, detail="No existe región con ese id")
-
     data.fecha_actualizacion = get_local_now_datetime()
     data.comuna = comuna.comuna
     data.id_region = comuna.id_region
     data.actualizado_por = user.email
     db.commit()
-
-    return {"message": "Se actualizó comuna", "comuna": comuna}
+    return (
+        {"message": "Se actualizó comuna", "comuna": data}
+    )
 
 @router.delete(
     "/{id_comuna}",

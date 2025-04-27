@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from app.db.models import Frecuencia, Medida, MedidaResponse, OrganismoSectorial, Plan, PlanResponse, TipoDato, TipoMedida
+from app.db.models import FrecuenciaResponse, MedidaResponse, OrganismoSectorialResponse, Plan, PlanResponse, TipoDatoResponse, TipoMedidaResponse
 from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from app.shared.enums import RolesEnum
 from app.shared.schemas import MedidaCreate, UsuarioOut
@@ -28,7 +28,7 @@ def read_planes_medidas(
 
     En caso de ser un organismo sectorial, solo podra acceder a los planes que le corresponden emitir un reporte.
     """
-    if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
+    if not db.query(PlanResponse).filter(PlanResponse.id_plan == id_plan, PlanResponse.eliminado_por == None).first():
         raise HTTPException(status_code=404, detail="El plan no existe")
 
     if user.rol.rol == RolesEnum.ORGANISMO_SECTORIAL:
@@ -86,31 +86,32 @@ def add_medida(
 
     if not db.query(Plan).filter(Plan.id_plan == id_plan).first():
         raise HTTPException(status_code=404, detail="Plan no existe")
-    if db.query(Medida).filter(Medida.nombre_corto.ilike(medida.nombre_corto)).first():
+    if db.query(MedidaResponse).filter(MedidaResponse.nombre_corto.ilike(medida.nombre_corto), MedidaResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Medida ya existe")
     if (
-        not db.query(Frecuencia)
-        .filter(Frecuencia.id_frecuencia == medida.id_frecuencia)
+        not db.query(FrecuenciaResponse)
+        .filter(FrecuenciaResponse.id_frecuencia == medida.id_frecuencia, FrecuenciaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Frecuencia no existe")
     if (
-        not db.query(OrganismoSectorial)
+        not db.query(OrganismoSectorialResponse)
         .filter(
-            OrganismoSectorial.id_organismo_sectorial == medida.id_organismo_sectorial
+            OrganismoSectorialResponse.id_organismo_sectorial == medida.id_organismo_sectorial,
+            OrganismoSectorialResponse.eliminado_por == None
         )
         .first()
     ):
         raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
     if (
-        not db.query(TipoMedida)
-        .filter(TipoMedida.id_tipo_medida == medida.id_tipo_medida)
+        not db.query(TipoMedidaResponse)
+        .filter(TipoMedidaResponse.id_tipo_medida == medida.id_tipo_medida, TipoMedidaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Tipo de medida no existe")
     if (
-        not db.query(TipoDato)
-        .filter(TipoDato.id_tipo_dato == medida.id_tipo_dato)
+        not db.query(TipoDatoResponse)
+        .filter(TipoDatoResponse.id_tipo_dato == medida.id_tipo_dato, TipoDatoResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Tipo de dato no existe")
@@ -181,28 +182,29 @@ def update_medida(
         raise HTTPException(status_code=404, detail="Medida no existe")
     
     if (
-        not db.query(Frecuencia)
-        .filter(Frecuencia.id_frecuencia == medida.id_frecuencia)
+        not db.query(FrecuenciaResponse)
+        .filter(FrecuenciaResponse.id_frecuencia == medida.id_frecuencia, FrecuenciaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Frecuencia no existe")
     if (
-        not db.query(OrganismoSectorial)
+        not db.query(OrganismoSectorialResponse)
         .filter(
-            OrganismoSectorial.id_organismo_sectorial == medida.id_organismo_sectorial
+            OrganismoSectorialResponse.id_organismo_sectorial == medida.id_organismo_sectorial,
+            OrganismoSectorialResponse.eliminado_por == None
         )
         .first()
     ):
         raise HTTPException(status_code=404, detail="Organismo sectorial no existe")
     if (
-        not db.query(TipoMedida)
-        .filter(TipoMedida.id_tipo_medida == medida.id_tipo_medida)
+        not db.query(TipoMedidaResponse)
+        .filter(TipoMedidaResponse.id_tipo_medida == medida.id_tipo_medida, TipoMedidaResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Tipo de medida no existe")
     if (
-        not db.query(TipoDato)
-        .filter(TipoDato.id_tipo_dato == medida.id_tipo_dato)
+        not db.query(TipoDatoResponse)
+        .filter(TipoDatoResponse.id_tipo_dato == medida.id_tipo_dato, TipoDatoResponse.eliminado_por == None)
         .first()
     ):
         raise HTTPException(status_code=404, detail="Tipo de dato no existe")

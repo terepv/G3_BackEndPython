@@ -50,7 +50,7 @@ def read_user(
 
     Requiere permisos de administrador para acceder a este recurso.
     """
-    usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
+    usuario = db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario == id_usuario, UsuarioResponse.eliminado_por == None).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
     return usuario
@@ -84,7 +84,7 @@ def add_usuario(
 
     Requiere permisos de administrador para acceder a este recurso.
     """
-    if db.query(Usuario).filter(Usuario.email.ilike(usuario.email)).first():
+    if db.query(UsuarioResponse).filter(UsuarioResponse.email.ilike(usuario.email), UsuarioResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Usuario ya existe")
     
     data = UsuarioResponse(
@@ -136,7 +136,7 @@ def update_user(
     data = db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario == id_usuario, UsuarioResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe usuario con ese id")
-    if db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario != id_usuario, UsuarioResponse.email.ilike(usuario.email)).first():
+    if db.query(UsuarioResponse).filter(UsuarioResponse.id_usuario != id_usuario, UsuarioResponse.email.ilike(usuario.email), UsuarioResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Email ya existe")
     data.nombre=usuario.nombre
     data.apellido=usuario.apellido

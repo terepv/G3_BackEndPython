@@ -97,7 +97,6 @@ def add_tipo_dato(
 @router.put(
     "/{id_tipo_dato}", 
     summary="Actualiza un tipo de dato por su id", 
-    status_code=201,
     response_model_exclude_none=True,
 )
 def add_tipo_dato(

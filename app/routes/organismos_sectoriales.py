@@ -89,6 +89,7 @@ def add_organismo(
         db.query(OrganismoSectorialResponse)
         .filter(
             OrganismoSectorialResponse.organismo_sectorial.ilike(nombre_organismo_sectorial),
+            OrganismoSectorialResponse.eliminado_por == None
         )
         .first()
     ):
