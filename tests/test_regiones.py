@@ -7,17 +7,18 @@ from utils.conftest import (
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("create_and_delete_test_users")
-class TestPlanesComunasEndpoints():
-    async def test_admin_get_planes_comuna_success(self, client):
+class TestTipoMedidasEndpoints():
+    async def test_admin_get_regiones_success(self, client):
         headers = get_basic_auth_header(email_admin, password_admin)
         response = client.post("/auth/token", headers=headers)
         access_token = response.json()["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = client.get("/planes/", headers=headers)
+        response = client.get("/regiones/", headers=headers)
         assert response.status_code == 200
 
-    async def test_crud_planes_comuna_success(self, client):
-        plan_name = f"plan_test"
+    async def test_crud_regiones_success(self, client):
+        
+        region_name = f"region_test"
 
         created_resources = []
 
@@ -39,30 +40,19 @@ class TestPlanesComunasEndpoints():
         access_token = response.json()["access_token"]
         
         try: 
-            plan = get_or_create("/planes/", {
-                "nombre": plan_name,
-                "descripcion": "Descripcion del plan test",
-                "fecha_publicacion": "2025-04-20 17:02:00",
-            }, "nombre", "id_plan", access_token, "plan")
-            assert plan["nombre"] == plan_name
-            assert plan["id_plan"] is not None
-
-
-            comuna = get_or_create("/comunas/", {
-                "comuna": "Arica",
-            }, "comuna", "id_comuna", access_token)
-            assert comuna["comuna"] == "Arica"
-            assert comuna["id_comuna"] is not None
+            region = get_or_create("/regiones/", {
+                "region": region_name,
+            }, "region", "id_region", access_token, "región")
+            assert region["region"] == region_name
+            assert region["id_region"] is not None
 
             headers = {"Authorization": f"Bearer {access_token}"}
-            response = client.post(f"/planes/{plan['id_plan']}/comunas/{comuna['id_comuna']}/", headers=headers)
-            assert response.status_code in (200, 201)
-            created_resources.append((f"/planes/{plan['id_plan']}/comunas/", comuna['id_comuna']))
-
-            response = client.post(f"/planes/{plan['id_plan']}/comunas/{comuna['id_comuna']}/", headers=headers)
-            assert response.status_code == 409
-            assert response.json()["detail"] == "La comuna ya está asociada al plan"
-
+            response = client.put(f"/regiones/{region['id_region']}", headers=headers, json={
+                "region": "region_test_editado",
+            })
+            assert response.status_code == 200
+            region_editada = response.json()["región"]
+            assert region_editada["region"] == "region_test_editado"
 
         finally:
             headers = {"Authorization": f"Bearer {access_token}"}

@@ -1,6 +1,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException
-from app.db.models import Region, RegionResponse
+from app.db.models import RegionResponse
 from app.shared.dependencies import RoleChecker, SyncDbSessionDep, get_user_from_token_data
 from app.shared.enums import RolesEnum
 from app.shared.schemas import RegionCreate, UsuarioOut
@@ -81,7 +81,7 @@ def add_region(
     Requiere rol de Administrador.
     """
 
-    if db.query(Region).filter(Region.region.ilike(region.region)).first():
+    if db.query(RegionResponse).filter(RegionResponse.region.ilike(region.region), RegionResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Región ya existe")
 
     data = RegionResponse(
@@ -127,7 +127,7 @@ def update_region(
     data = db.query(RegionResponse).filter(RegionResponse.id_region == id_region, RegionResponse.eliminado_por == None).first()
     if not data:
         raise HTTPException(status_code=404, detail="No existe región con ese id")
-    if db.query(RegionResponse).filter(RegionResponse.id_region != id_region, RegionResponse.region.ilike(region.region)).first():
+    if db.query(RegionResponse).filter(RegionResponse.id_region != id_region, RegionResponse.region.ilike(region.region), RegionResponse.eliminado_por == None).first():
         raise HTTPException(status_code=409, detail="Region ya existe")
     data.region = region.region
     data.fecha_actualizacion = get_local_now_datetime()
