@@ -2,8 +2,9 @@ from base64 import b64encode
 from datetime import datetime
 import pytest_asyncio
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from app.db.database import SessionDepAsync
-from app.db.models import OrganismoSectorialResponse, Rol, TipoMedida, TipoMedidaResponse, UsuarioResponse
+from app.db.models import ComunaResponse, OrganismoSectorialResponse, Rol, TipoMedida, TipoMedidaResponse, UsuarioResponse, RegionResponse
 from app.shared.utils import get_password_hash
 
 creado_por = "hpinilla@gmail.com"
@@ -130,3 +131,82 @@ async def tipo_medida_test():
             await db.commit()
             await db.refresh(tipo_medida)
     yield tipo_medida
+
+region_test_name = "Región Test"
+
+@pytest_asyncio.fixture(scope="class")
+async def delete_region_if_exists():
+    yield
+    async with SessionDepAsync() as db:
+        result = await db.execute(select(RegionResponse).filter(RegionResponse.region == region_test_name))
+        region = result.scalars().first()
+        if region:
+            await db.delete(region)
+            await db.commit()
+
+@pytest_asyncio.fixture(scope="function")
+async def region_test():
+    async with SessionDepAsync() as db:
+        result = await db.execute(select(RegionResponse).filter(RegionResponse.region == region_test_name))
+        region = result.scalars().first()
+        if not region:
+            region = RegionResponse(
+                region=region_test_name,
+                fecha_creacion=datetime.now(),
+                creado_por=creado_por,
+            )
+            db.add(region)
+            await db.commit()
+            await db.refresh(region)
+    yield region
+
+comuna_test_name = "Comuna Test"
+
+@pytest_asyncio.fixture(scope="class")
+async def delete_comuna_if_exists():
+    yield
+    async with SessionDepAsync() as db:
+        result = await db.execute(select(ComunaResponse).filter(ComunaResponse.comuna == comuna_test_name))
+        comuna = result.scalars().first()
+        if comuna:
+            await db.delete(comuna)
+            await db.commit()
+
+from sqlalchemy.orm import joinedload
+
+@pytest_asyncio.fixture(scope="function")
+async def comuna_test(region_test):
+    """Fixture que crea una comuna de prueba y la asocia a una región de prueba."""
+    async with SessionDepAsync() as db:
+        # Primero verificar si la comuna ya existe
+        result = await db.execute(
+            select(ComunaResponse)
+            .options(joinedload(ComunaResponse.region))
+            .filter(
+                ComunaResponse.comuna == comuna_test_name,
+                ComunaResponse.eliminado_por == None
+            )
+        )
+        comuna = result.scalars().first()
+        
+        if not comuna:
+            # Crear nueva comuna si no existe
+            comuna = ComunaResponse(
+                comuna=comuna_test_name,
+                id_region=region_test.id_region,
+                fecha_creacion=datetime.now(),
+                creado_por=creado_por,
+            )
+            db.add(comuna)
+            await db.commit()
+            await db.refresh(comuna)
+            
+            # Volver a cargar la comuna con su relación
+            result = await db.execute(
+                select(ComunaResponse)
+                .options(joinedload(ComunaResponse.region))
+                .filter(ComunaResponse.id_comuna == comuna.id_comuna)
+            )
+            comuna = result.scalars().first()
+        
+    return comuna
