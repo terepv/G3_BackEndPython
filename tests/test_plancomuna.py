@@ -3,7 +3,6 @@ from base64 import b64encode
 from utils.conftest import (
     create_and_delete_test_users, client, email_admin, password_admin,
 )
-from uuid import uuid4
 
 def get_basic_auth_header(username: str, password: str):
     credentials = f"{username}:{password}"
@@ -12,44 +11,39 @@ def get_basic_auth_header(username: str, password: str):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("create_and_delete_test_users")
-class TestRegionesEndpoint():
-    async def test_get_regiones(self, client):
+class TestPlanComunaEndpoint():
+    async def test_get_plan_comuna(self, client):
         headers = get_basic_auth_header(email_admin, password_admin)
         response = client.post("/auth/token", headers=headers)
         data = response.json()
         access_token = data["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = client.get("/regiones", headers=headers)
+        id_plan = 1
+        response = client.get(f"/planes/{id_plan}/comunas", headers=headers)
         assert response.status_code == 200
         data = response.json()
-
-    async def test_post_put_delete_regiones(self, client):
+    
+    async def test_post_delete_planes_comunas(self, client):
         headers = get_basic_auth_header(email_admin, password_admin)
         response = client.post("/auth/token", headers=headers)
         data = response.json()
         access_token = data["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
+        id_plan = 1
+        id_comuna = 1
 
-       # 2. Crear región (POST)
+       # 2. Crear plan para una comuna (POST)
         post_payload = {
-        "region": f"Región Ficticia {uuid4().hex[:6]}"
-        }
-
-        post_response = client.post("/regiones", headers=headers, json=post_payload)
-        assert post_response.status_code == 201
-        region_data = post_response.json()
-        region_id = region_data["región"]["id_region"]
-        assert region_id is not None
-
-        # 3. Actualizar región (PUT)
-        put_payload = {
-        "region": f"Región Ficticia Actualizada {uuid4().hex[:6]}"
-        }
+         "id_plan": id_plan,
+         "id_comuna": id_comuna
         
-        put_response = client.put(f"/regiones/{region_id}", headers=headers, json=put_payload)
-        assert put_response.status_code == 200
+        }
+        post_response = client.post(f"/planes/{id_plan}/comunas/{id_comuna}", headers=headers, json=post_payload)
+        assert post_response.status_code in (201, 409)
 
-        # 4. Eliminar región (DELETE)
-        delete_response = client.delete(f"/regiones/{region_id}", headers=headers)
+        #3. Elimina un plan para la columna
+        delete_response = client.delete(f"/planes/{id_plan}/comunas/{id_comuna}", headers=headers)
         assert delete_response.status_code == 200
+
+        
 
