@@ -39,8 +39,7 @@ class TestTipoDatoEndpoint():
         assert post_response.status_code == 201
         tipo_dato_data = post_response.json()
         tipo_dato_id = tipo_dato_data["Tipo de dato"]["id_tipo_dato"]
-        print("jofsddsfs")
-        print(tipo_dato_id)
+        
         assert tipo_dato_id is not None
 
         # 3. Actualizar región (PUT)
