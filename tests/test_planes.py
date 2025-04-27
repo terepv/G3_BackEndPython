@@ -52,6 +52,6 @@ async def test_crud_plan_success(client):
     finally:
         headers = {"Authorization": f"Bearer {access_token}"}
         for endpoint, resource_id in reversed(created_resources):
-            print(f"Deleting {endpoint}{resource_id}")
+            # print(f"Deleting {endpoint}{resource_id}")
             delete_response = client.delete(f"{endpoint}{resource_id}/", headers=headers)
             assert delete_response.status_code in (200, 204), f"Error deleting {endpoint}{resource_id}"
