@@ -367,16 +367,18 @@ class ReporteMedidaResponse(ReporteMedida, AuditMixin):
 
 class Resultado(Base):
     __tablename__ = "resultado"
-    id_reporte_medida: Mapped[int] = mapped_column(Integer, ForeignKey("reporte_medida.id_reporte_medida"), nullable=False, primary_key=True)
+    id_reporte_medida: Mapped[int] = mapped_column(Integer, ForeignKey("reporte_medida.id_reporte_medida"), nullable=False)
     reporte_medida: Mapped[ReporteMedida] = relationship(ReporteMedida)
     texto: Mapped[str] = mapped_column(String(100), nullable=False)
     numerico: Mapped[float | None] = mapped_column(Integer, nullable=True)
     si_no: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     id_opcion: Mapped[int | None] = mapped_column(Integer, ForeignKey("opcion.id_opcion"), nullable=True)
     opcion: Mapped[Opcion] = relationship(Opcion)
+    id_resultado: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
 
 class ResultadoResponse(Resultado, AuditMixin):
-    def __init__(self, id_reporte_medida: int, texto: str, numerico: float | None = None, si_no: bool | None = None, id_opcion: int | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None):
+    def __init__(self, id_reporte_medida: int, texto: str, numerico: float | None = None, si_no: bool | None = None, id_opcion: int | None = None, fecha_creacion: datetime | None = None, creado_por: str | None = None, id_resultado: int | None = None):
         self.id_reporte_medida = id_reporte_medida
         self.texto = texto
         self.numerico = numerico
@@ -384,4 +386,5 @@ class ResultadoResponse(Resultado, AuditMixin):
         self.id_opcion = id_opcion
         self.fecha_creacion = fecha_creacion
         self.creado_por = creado_por
+        self.id_resultado = id_resultado
     

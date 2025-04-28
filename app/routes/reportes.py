@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 from operator import and_
 from typing import Annotated
@@ -240,8 +241,28 @@ def add_resultado(
         title="Reporte Medida",
         description="Lista de medidas a reportar con su resultado",
         openapi_examples={
-            "default": get_example("resultado_post"),
+            "texto": {
+                "summary": "Reporte de texto",
+                "description": "Ejemplo de medida que reporta como texto",
+                "value": {"texto": "Texto de ejemplo"},
+            },
+            "numerico": {
+                "summary": "Reporte numérico",
+                "description": "Ejemplo de medida que reporta como numérico",
+                "value": {"numerico": 123.45},
+            },
+            "si_no": {
+                "summary": "Reporte booleano",
+                "description": "Ejemplo de medida que reporta como booleano",
+                "value": {"si_no": True},
+            },
+            "id_opcion": {
+                "summary": "Reporta con opción seleccionada",
+                "description": "Ejemplo de medida que reporta como opción seleccionada",
+                "value": {"id_opcion": 1},
+            },
         }
+
     ),
     _: bool = Depends(RoleChecker(allowed_roles=[RolesEnum.ORGANISMO_SECTORIAL])),
 ):
@@ -255,8 +276,41 @@ def add_resultado(
     ):
         raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
     
-    if db.query(ResultadoResponse).filter(ResultadoResponse.id_reporte_medida == id_reporte_medida, ResultadoResponse.eliminado_por == None).first():
+    resultado = (
+        db.query(ResultadoResponse)
+        .filter(
+            ResultadoResponse.id_reporte_medida == id_reporte_medida,
+            ResultadoResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if resultado:
         raise HTTPException(status_code=401, detail="Ya existe un resultado para este reporte de medida")
+    
+    reporte_medida_db = (
+        db.query(ReporteMedidaResponse)
+        .filter(
+            ReporteMedidaResponse.id_reporte_medida == id_reporte_medida, 
+            ReporteMedidaResponse.eliminado_por == None,
+        )
+        .first()
+    )
+    if not reporte_medida_db: 
+        raise HTTPException(status_code=401, detail="No existe reporte de medida con ese id")
+    
+    medida = (
+        db.query(MedidaResponse).filter(MedidaResponse.id_medida == reporte_medida_db.id_medida, MedidaResponse.eliminado_por == None).first()
+    )
+
+    if medida:
+        if reporte_medida.texto is not None and medida.tipo_dato.tipo_dato != "Texto":
+            raise HTTPException(status_code=401, detail=f"El tipo de dato a reportar debe ser {medida.tipo_dato.tipo_dato}")
+        if reporte_medida.numerico is not None and medida.tipo_dato.tipo_dato != "Numérico":
+            raise HTTPException(status_code=401, detail=f"El tipo de dato a reportar debe ser {medida.tipo_dato.tipo_dato}")
+        if reporte_medida.si_no is not None and medida.tipo_dato.tipo_dato != "Sí/No":
+            raise HTTPException(status_code=401, detail=f"El tipo de dato a reportar debe ser {medida.tipo_dato.tipo_dato}")
+        if reporte_medida.id_opcion is not None and medida.tipo_dato.tipo_dato != "Selección":
+            raise HTTPException(status_code=401, detail=f"El tipo de dato a reportar debe ser {medida.tipo_dato.tipo_dato}")
 
     if reporte_medida.texto is None and reporte_medida.numerico is None and reporte_medida.si_no is None and reporte_medida.id_opcion is None:
         raise HTTPException(status_code=401, detail="Debe ingresar al menos un resultado")
@@ -342,6 +396,8 @@ def update_resultado(
     resultado.id_opcion = reporte_medida.id_opcion
     resultado.fecha_actualizacion = get_local_now_datetime()
     resultado.actualizado_por = user.email
+    resultado.fecha_eliminacion = None
+    resultado.eliminado_por = None
     db.commit()
     
     return {
@@ -390,10 +446,12 @@ def delete_resultado(
         )
         .first()
     )
-    if resultado:
-        resultado.fecha_eliminacion = get_local_now_datetime()
+    if resultado and resultado.fecha_eliminacion is None:
+        resultado.fecha_eliminacion = datetime.now()
         resultado.eliminado_por = user.email
+        db.flush()
         db.commit()
+
     return {"message": "Se eliminó resultado"}
 
 
