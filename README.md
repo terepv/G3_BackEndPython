@@ -98,27 +98,27 @@ Para el correcto funcionamiento de la aplicación, se debe montar el siguiente *
 ## Estructura del proyecto
 
 ```
-├──📁 .venv -- Ambiente virtual python
-├──📁 db -- Conexión a base de datos, operaciones en db y modelos
-│  ├──🗎 ...
-├──📁 docs -- Archivos usados en documentacion y diagramas
-│  ├──📁 database
-│  │  ├──📁 backup -- Archivo para restaurar base de datos
-│  │  ├──📁 erd -- Diagramas Entidad-Relación
-├──📁 examples -- JSON ejemplos para API (Swagger/OpenAPI)
-├──📁 routes -- Rutas a las que responderá el API con su funcionalidad 
-│  ├──🗎 ...
-├──📁 shared -- Recursos compartidos 
-│  ├──🗎 dependencies.py -- Dependencias compartidas (Sesión BD, etc...)
-│  ├──🗎 schemas.py -- Modelos Pydantic
-│  ├──🗎 utils.py -- Funciones reutilizables
-├──🗎 .env -- Archivo de parametrización de variables de ambiente
-├──🗎 .gitignore -- Listado de archivos y carpetas que se ignoraran en el repositorio
-├──🗎 config.py -- Lee y disponibiliza variables de ambiente
-├──🗎 main.py -- Punto de entrada de la aplicación
-├──🗎 poetry.lock -- Detalle dependencias instaladas
-├──🗎 pyproject.toml -- Archivo de gestión de dependencias
-├──🗎 README.md -- Documentacion del repositorio
+G3_BackEndPython/
+├──📁 .venv ------------------ Ambiente virtual python
+├── 📁 alembic/ -------------- Configuración y migraciones de la base de datos
+├── 📁 app/ ------------------ Código principal de la aplicación
+│   ├── 📁 db/ --------------- Modelos y configuración de la base de datos
+│   ├── 📁 routes/ ----------- Rutas y endpoints de la API
+│   ├── 📁 shared/ ----------- Utilidades y código compartido
+│   ├── 🗎 config.py ---------- Configuración de la aplicación
+│   └── 🗎 main.py ------------ Punto de entrada de la aplicación
+├── 📁 tests/ ---------------- Tests de la aplicación
+│   ├── 📁 utils/ ------------ Utilidades para testing
+│   └── 🗎 test_(...).py ------ Scripts de los tests
+├── 📁 docs/ ----------------- Documentación del proyecto
+├── 📁 .github/ -------------- Configuración para GitHub (CI/CD, etc.)
+├── 📁 .vscode/ -------------- Configuración de VS Code
+├── 🗎 .gitignore ------------- Listado de archivos y carpetas que se ignoraran en el repositorio
+├── 🗎 alembic.ini ------------ Configuración de Alembic
+├── 🗎 pyproject.toml --------- Configuración de Poetry y dependencias
+├── 🗎 poetry.lock ------------ Bloqueo de versiones de dependencias
+├── 🗎 requirements.txt ------- Dependencias del proyecto
+└── 🗎 README.md -------------- Documentación del repositorio
 ```
 
 ## 👥🔑 Roles de usuario y permisos
